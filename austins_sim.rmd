@@ -1,0 +1,28 @@
+#doc for Austin to create simulations
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+data <- read_csv("owid-covid-data.csv")
+```
+
+```{r}
+names(data)
+china <- data %>% filter(location == "China", date < "2020-03-15")
+```
+
+```{r}
+cases <- ggplot(china, aes(x = date, y = total_cases)) + geom_line() + labs(title = "Total Cases in China", x = "Date", y = "Total Cases")
+fatalities <- ggplot(china, aes(x = date, y = total_deaths)) + geom_line() + labs(title = "Total Deaths in China", x = "Date", y = "Total Deaths")
+```
+
+```{r}
+cases
+fatalities
+```
+
+```{r}
+```
