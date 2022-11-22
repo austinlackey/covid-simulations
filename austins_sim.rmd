@@ -11,12 +11,20 @@ data <- read_csv("owid-covid-data.csv")
 
 ```{r}
 names(data)
-china <- data %>% filter(location == "China", date < "2020-03-15")
+china <- data %>% filter(location == "China", date < "2020-03-20")
 ```
 
 ```{r}
-cases <- ggplot(china, aes(x = date, y = total_cases)) + geom_line() + labs(title = "Total Cases in China", x = "Date", y = "Total Cases")
-fatalities <- ggplot(china, aes(x = date, y = total_deaths)) + geom_line() + labs(title = "Total Deaths in China", x = "Date", y = "Total Deaths")
+function <- (5) + (10)*erf((10)*x-14)
+```
+
+```{r}
+cases <- ggplot(china, aes(x = date, y = total_cases)) + 
+    geom_line() + 
+    labs(title = "Total Cases in China", x = "Date", y = "Total Cases")
+fatalities <- ggplot(china, aes(x = date, y = total_deaths)) + 
+    geom_line() + 
+    labs(title = "Total Deaths in China", x = "Date", y = "Total Deaths")
 ```
 
 ```{r}
