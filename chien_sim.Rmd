@@ -3,24 +3,72 @@
 ```{r}
 library(tidyverse)
 library(dplyr)
+library(pracma)
 ```
 
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+covid <- read_csv("owid-covid-data.csv")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+china <- covid %>% 
+  filter(location=="China") %>% 
+  filter(date <= "2020-03-28") %>% 
+  filter(date >= "2020-01-22") %>% 
+  select(date, total_cases, total_deaths) %>% 
+  mutate(days = c(1:67))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+ggplot() +
+  geom_point(aes(x = date, y = total_cases), data = china)
+#+ geom_smooth(aes(x = date, y = total_cases), data=italy)
+ggplot() +
+  geom_point(aes(x = date, y = total_deaths), data = china)
+#+ geom_smooth(aes(x = date, y = total_deaths), data=italy)
+```
+
+```{r}
+x <- 1:67
+ggplot(china,aes(x)) +
+  geom_point(aes(x = days, y = total_cases)) +
+  stat_function(fun=function(x) 40000 + 40000 * erf(0.11*x - 2))
+
+ggplot(china,aes(x)) +
+  geom_point(aes(x = days, y = total_deaths)) +
+  stat_function(fun=function(x) 1600 + 1600 * erf(0.071*x - 1.8))
+```
+
+```{r}
+italy <- covid %>% 
+  filter(location=="Italy") %>% 
+  filter(date <= "2020-04-21") %>%
+  filter(date >= "2020-02-15") %>%
+  select(date, total_cases, total_deaths) %>% 
+  mutate(days = c(1:67))
+italy[45:67,] <- NA
+```
+
+```{r}
+ggplot() +
+  geom_point(aes(x = date, y = total_cases), data = italy)
+#+ geom_smooth(aes(x = date, y = total_cases), data=italy)
+ggplot() +
+  geom_point(aes(x = date, y = total_deaths), data = italy)
+#+ geom_smooth(aes(x = date, y = total_deaths), data=italy)
+```
+
+
+```{r}
+x <- 1:67
+ggplot(italy,aes(x)) +
+  geom_point(aes(x = days, y = total_cases)) +
+  stat_function(fun=function(x) 100000 + 100000 * erf(0.07*x - 3))
+
+ggplot(italy,aes(x)) +
+  geom_point(aes(x = days, y = total_deaths)) +
+  stat_function(fun=function(x) 11000 + 11000 * erf(0.068*x - 3))
+```
