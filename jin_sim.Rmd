@@ -130,6 +130,13 @@ for (i in 1:m){
 }
 flex_day
 ```
+## MC (day of flex) plot
+
+```{r}
+ggplot() +
+  geom_point(aes(x=1:m, y=flex_day), color="red")
+
+```
 
 ## Day of flex (found without the fitted model)
 
