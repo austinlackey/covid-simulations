@@ -1,0 +1,185 @@
+---
+title: "jin_sim"
+output: html_document
+date: '2022-11-29'
+---
+
+## load library
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(pracma)
+```
+
+## read data
+
+```{r}
+data <- read.csv("https://raw.githubusercontent.com/stat400-csu/project-5/main/owid-covid-data.csv")
+View(data)
+```
+
+## extract China data of interest
+
+```{r}
+china <- data |>
+  filter(location == "China") |>
+  filter(date >= "2020-01-22", date <= "2020-03-28") |>
+  select(c(date, total_cases, total_deaths)) |>
+  mutate(days = 1:n())
+head(china)
+```
+
+## recreate cumulative number plots of positive cases and fatalities in China
+
+```{r}
+positive <- ggplot(data = china) +
+  geom_point(aes(x = days, y = total_cases), color = "red") +
+  labs(x = "Days", y = "China cumulative number of cases")
+positive
+fatalities <- ggplot(data = china) +
+  geom_point(aes(x = days, y = total_deaths), color = "red") +
+  labs(x = "Days", y = "China cumulative number of fatalities") +
+  ylim(0,5000)
+fatalities
+```
+
+## apply nonlinear least square curve fitting to find the targeted guassian error function
+
+```{r}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+model1 <- nls(total_cases ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+summary(model1)
+model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+summary(model2)
+```
+
+## superimpose the fitted gaussian error functions to the plots
+
+```{r, warning=FALSE}
+fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)}
+positive +
+  stat_function(fun=fn_model1, color="blue")
+fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
+fatalities +
+  stat_function(fun=fn_model2, color="blue")
+```
+
+## Monte Carlo simulatioin design
+
+```{r}
+set.seed(400)
+
+n <- length(china$days)   # number of observed days
+m <- 150    # number of random outcomes
+mu <- 1
+sig <- 0.01  # the assumed measurement uncertainty is 10%
+gau_sample <- matrix(rnorm(n*m, mu, sig), nrow=m, ncol=n)   # matrix of gaussian distribution
+
+# multiply the nominal value with gau_sample for each day
+mc_data <- vector()
+for (j in 1:n){
+  mc_data <- c(mc_data, china$total_cases[j]*gau_sample[,j])
+}
+mc_data <- matrix(mc_data, nrow=m, ncol=n)  # daily data to obtain 150 series of cases
+head(mc_data)
+```
+
+## Day of flex (found with the fitted model)
+
+```{r}
+# trial 1
+try <- mc_data[1,]
+model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=1:67
+tmp <- eval(fn_try_deriv)
+min(which(tmp < 0))
+```
+
+```{r}
+# trial 1
+try <- mc_data[1,]
+model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=1:67
+tmp <- eval(fn_try_deriv)
+min(which(tmp < 0))
+```
+
+## Day of flex (found without the fitted model)
+
+```{r}
+flex <- rep(NA, m)
+
+# for each Monte Carlo simulation (m)
+for (i in 1:m){
+  temp_data <- mc_data[i,]
+  num_diff <- 0
+  # for each day
+  for (j in 1:(n-1)){
+    num_diff <- temp_data[j+1] - temp_data[j]
+    if (num_diff < 0){
+      flex[i] <- j
+      break
+    }
+  }
+}
+
+for (i in 1:m){
+  temp_data <- mc_data[i,]
+  num_diff <- rep(NA,n-1)
+  # for each day
+  for (j in 1:(n-1)){
+    num_diff[j] <- temp_data[j+1] - temp_data[j]
+  }
+  for (j in 1:(n-1)){
+    if (num_diff[j+1] < num_diff[j]){
+      flex[i] <- j
+      break
+    }
+  }
+}
+flex
+```
+
+```{r}
+temp_data <- mc_data[3,]
+  # for each day
+for (j in 1:(n-1)){
+    num_diff[j] <- temp_data[j+1] - temp_data[j]
+}
+
+for (j in 1:(n-1)){
+  if (num_diff[j+1] < num_diff[j]){
+    print(j)
+    break
+  }
+}
+```
+
+
+
+
+
+
+
