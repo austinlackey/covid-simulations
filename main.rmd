@@ -16,6 +16,18 @@ output: powerpoint_presentation
 the Gauss Error function, we can predict the spread of covid data in the future for other countries.
 - $a+b*erf(c*x-d)$
 
+# China Simulation
+
+## China Simulation
+
+- Add stuff here
+
+# Italy Simulation
+
+## Italy Simulation
+
+- Add stuff here
+
 # Australia Simulation
 
 ## Australia Simulation
@@ -81,14 +93,6 @@ print(cases_pre_plot_Australia)
 cases_plot_Australia
 # print(fatalities_plot_Australia)
 ```
-
-## Italy Simulation
-
-- Add stuff here
-
-## (Fill in Here) Simulation
-
-- Add stuff here
 
 ## Works Cited
 
