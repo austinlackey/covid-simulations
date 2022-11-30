@@ -12,51 +12,101 @@ data <- read_csv("owid-covid-data.csv")
 
 ```{r}
 names(data)
-china <- data %>% filter(location == "China", date < "2020-03-20")
+china <- data %>% filter(location == "China", date > "2020-01-22", date < "2020-03-23")
 china <- subset(china, select = c(date, total_cases, total_deaths))
 china <- china %>% mutate(days = 1:n())
 ```
 
 ```{r}
-cases <- ggplot(china, aes(x = date, y = total_cases)) + 
+cases_China <- ggplot(china, aes(x = date, y = total_cases)) + 
     geom_line() + 
     labs(title = "Total Cases in China", x = "Date", y = "Total Cases")
-fatalities <- ggplot(china, aes(x = date, y = total_deaths)) + 
+fatalities_China <- ggplot(china, aes(x = date, y = total_deaths)) + 
     geom_line() + 
     labs(title = "Total Deaths in China", x = "Date", y = "Total Deaths")
+print(cases_China)
+print(fatalities_China)
 ```
 
-```{r}
-cases
-fatalities
-```
-
+CHINA SIMULATION
 ```{r}
 x <- 0:60
-func <- function(x) 40000+40000*erf(0.11*x-2)
-func2 <- function(x) 1550+1550*erf(0.08*x-2)
-```
+cases_function_china <- function(x) 40000+40000*erf(0.11*x-2)
+fatalities_function_china <- function(x) 1600+1600*erf(0.070*x-1.7)
 
-```{r}
-```
-
-```{r}
-cases_function <- ggplot(china, aes(x = days, y = total_cases)) + 
+cases_plot_China <- ggplot(china, aes(x = days, y = total_cases)) + 
     geom_line() + 
-    stat_function(fun=func, color="#d33636", size=1.5) +
+    stat_function(fun=cases_function_china, color="#d33636", size=1.5) +
     scale_x_continuous(breaks = seq(0, 60, 1)) +
-    labs(title = "Total Cases in China", x = "Days", y = "Total Cases")
-fatalities_function <- ggplot(china, aes(x = days, y = total_deaths)) + 
+    labs(title = "Total Cases in China from 1/22/2020 to 3/23/2020 (60 days)", x = "Days", y = "Total Cases")
+fatalities_plot_China <- ggplot(china, aes(x = days, y = total_deaths)) + 
     geom_line() + 
-    stat_function(fun=func2, color="#3333e2", size=1.5) +
+    stat_function(fun=fatalities_function_china, color="#3333e2", size=1.5) +
     scale_x_continuous(breaks = seq(0, 60, 1)) +
-    labs(title = "Total Deaths in China", x = "Days", y = "Total Deaths")
+    labs(title = "Total Deaths in China from 1/22/2020 to 3/23/2020 (60 days)", x = "Days", y = "Total Deaths")
+print(cases_plot_China)
+print(fatalities_plot_China)
+```
+
+AUSTRALIA SIMULATION
+```{r}
+australia <- data %>% filter(location == "Australia", date > "2020-06-01", date < "2020-12-19")
+australia <- subset(australia, select = c(date, total_cases, total_deaths))
+australia <- australia %>% mutate(days = 1:n())
 ```
 
 ```{r}
-cases_function
-fatalities_function
+minimizedDays <- 70
+australiaPre <- australia %>% filter(days < minimizedDays)
+cases_Australia <- ggplot(australiaPre, aes(x = date, y = total_cases)) + 
+    geom_line() + 
+    labs(title = "Total Cases in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Date", y = "Total Cases")
+fatalities_Australia <- ggplot(australiaPre, aes(x = date, y = total_deaths)) +
+    geom_line() + 
+    labs(title = "Total Deaths in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Date", y = "Total Deaths")
+print(cases_Australia)
+print(fatalities_Australia)
 ```
 
 ```{r}
+x <- 0:minimizedDays
+cases_function_australia <- function(x) 17200+10000*erf(0.04*x-2.4)
+fatalities_function_australia <- function(x) 500+400*erf(0.038*x-3.1)
+
+cases_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
+    geom_line() + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=2, linetype="dotted") +
+    scale_x_continuous(breaks = seq(0, minimizedDays, 1)) +
+    labs(title = "Total Cases in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Cases")
+fatalities_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
+    geom_line() + 
+    stat_function(fun=fatalities_function_australia, color="#3333e2", size=2, linetype="dotted") +
+    scale_x_continuous(breaks = seq(0, minimizedDays, 1)) +
+    labs(title = "Total Deaths in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Deaths")
+print(cases_pre_plot_Australia)
+print(fatalities_pre_plot_Australia)
+```
+
+```{r}
+x <- 0:200
+cases_function_australia <- function(x) 17200+10000*erf(0.04*x-2.4)
+fatalities_function_australia <- function(x) 500+400*erf(0.038*x-3.1)
+
+cases_plot_Australia <- ggplot(australia, aes(x = days, y = total_cases)) + 
+    geom_line() + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 1)) +
+    labs(title = "Total Cases in Australia from 6/1/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Cases")
+fatalities_plot_Australia <- ggplot(australia, aes(x = days, y = total_deaths)) +
+    geom_line() + 
+    stat_function(fun=fatalities_function_australia, color="#3333e2", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 1)) +
+    labs(title = "Total Deaths in Australia from 6/1/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
+
+print(cases_plot_Australia)
+print(fatalities_plot_Australia)
+```
+
+```{r}
+
 ```
