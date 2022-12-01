@@ -128,14 +128,18 @@ for (i in 1:m){
   tmp <- eval(fn_try_deriv)
   flex_day[i] <- min(x[tmp < 0])
 }
-flex_day
+
+mean(flex_day)
+sd(flex_day)
 ```
+
 ## MC (day of flex) plot
 
 ```{r}
 ggplot() +
-  geom_point(aes(x=1:m, y=flex_day), color="red")
-
+  geom_point(aes(x=1:m, y=flex_day), color="red") +
+  geom_hline(yintercept=mean(flex_day), color="blue") +
+  labs(x = "Number of Monte Carlo simulation", y = "Day of flex, from February 15")
 ```
 
 ## Day of flex (found without the fitted model)
