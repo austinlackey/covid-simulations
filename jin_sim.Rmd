@@ -50,9 +50,9 @@ fatalities
 ```{r}
 gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
 model1 <- nls(total_cases ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
-summary(model1)
+summary(model1)$parameters
 model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
-summary(model2)
+summary(model2)$parameters
 ```
 
 ## superimpose the fitted gaussian error functions to the plots

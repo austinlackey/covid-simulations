@@ -1,9 +1,21 @@
 ---
 title: "Predicting Covid Data"
-author: Austin Lackey, Chien Lin and Jin Peng
-date: Tuesday, November 6th, 2022
-output: powerpoint_presentation
+author: "Austin Lackey, Chien Lin and Jin Peng"
+date: "Tuesday, November 6th, 2022"
+output:
+  powerpoint_presentation: default
+  beamer_presentation: default
 ---
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+# useful libraries
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(pracma)
+# read covid data
+data <- read_csv("owid-covid-data.csv")
+```
 
 ## The MonteCarlo Study
 
@@ -18,9 +30,74 @@ the Gauss Error function, we can predict the spread of covid data in the future 
 
 # China Simulation
 
-## China Simulation
+## Available Official Data
 
-- Add stuff here
+Cumulative diagnosed positive cases:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
+# extract China data of interest
+china <- data |>
+  filter(location == "China") |>
+  filter(date >= "2020-01-22", date <= "2020-03-28") |>
+  select(c(date, total_cases, total_deaths)) |>
+  mutate(days = 1:n())
+
+# recreate plots
+positive <- ggplot(data = china) +
+  geom_point(aes(x = days, y = total_cases), color = "red") +
+  labs(x = "Days", y = "China cumulative number of cases")
+positive
+```
+
+## Available Official Data
+
+Cumulative fatalities:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
+fatalities <- ggplot(data = china) +
+  geom_point(aes(x = days, y = total_deaths), color = "red") +
+  labs(x = "Days", y = "China cumulative number of fatalities") +
+  ylim(0,5000)
+fatalities
+```
+
+## Fit by the Gauss Error Function
+
+Apply $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$ of a Gauss error function model: $a+b*erf(c*x-d)$.
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+```
+
+```{r, message=FALSE, warning=FALSE}
+model <- nls(total_cases ~ gauss_fn(days,a,b,c,d), 
+             data=china, 
+             start=list(a=10000,b=10000,c=0.1,d=1))
+```
+
+## Fit by the Gauss Error Function
+
+Fit of cumulative diagnosed positive cases:
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+model1 <- nls(total_cases ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+summary(model1)$parameters
+fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)}
+positive + stat_function(fun=fn_model1, color="blue")
+```
+
+## Fit by the Gauss Error Function
+
+Fit of cumulative fatalities:
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+#summary(model2)$parameters
+fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
+fatalities +
+  stat_function(fun=fn_model2, color="blue")
+```
 
 # Italy Simulation
 
