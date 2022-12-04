@@ -1,6 +1,7 @@
 ##todo
 
 ```{r}
+set.seed(400)
 library(tidyverse)
 library(dplyr)
 library(pracma)
@@ -10,11 +11,11 @@ library(pracma)
 
 
 ```{r cars}
-covid <- read_csv("owid-covid-data.csv")
+data <- read_csv("owid-covid-data.csv")
 ```
 
 ```{r}
-china <- covid %>% 
+china <- data %>% 
   filter(location=="China") %>% 
   filter(date <= "2020-03-28") %>% 
   filter(date >= "2020-01-22") %>% 
@@ -43,7 +44,7 @@ ggplot(china,aes(x)) +
 ```
 
 ```{r}
-italy <- covid %>% 
+italy <- data %>% 
   filter(location=="Italy") %>% 
   filter(date <= "2020-04-21") %>%
   filter(date >= "2020-02-15") %>%
@@ -72,3 +73,26 @@ ggplot(italy,aes(x)) +
   geom_point(aes(x = days, y = total_deaths)) +
   stat_function(fun=function(x) 11000 + 11000 * erf(0.068*x - 3))
 ```
+
+```{r}
+italy = italy[1:44,]
+n <- 44 # number of observed days
+m <- 150 # number of random outcomes
+
+# the Gaussian distribution (Normal) with mean = 1 and sigma = 0.1
+mu <- 1
+sig <- 0.1 # Gaussian distributed with a 10% standard deviation
+
+# each number in the matrix is part of a Gaussian distribution
+df <- matrix(rnorm(n*m, mu, sig), nrow=m, ncol=n)
+
+# multiplied the nominal value of the diagnosed positive cases of the jth day for the 150 numbers of the jth column of the random matrix mentioned above
+mc_data <- vector()
+for (j in 1:n){
+  mc_data <- c(mc_data, italy$total_cases[j]*df[,j])
+}
+
+mc_data <- matrix(mc_data, nrow=m, ncol=n)  # daily data to obtain 150 series of cases
+head(mc_data)
+```
+

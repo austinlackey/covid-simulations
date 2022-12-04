@@ -101,9 +101,48 @@ fatalities +
 
 # Italy Simulation
 
-## Italy Simulation
+## Plot of Diagnosed Positive Cases
 
-- Add stuff here
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# extract Italy data
+italy <- data %>% 
+  filter(location=="Italy") %>% 
+  filter(date <= "2020-04-21") %>%
+  filter(date >= "2020-02-15") %>%
+  select(date, total_cases, total_deaths) %>% 
+  mutate(days = c(1:67))
+italy[45:67,] <- NA
+
+
+ggplot() +
+  geom_point(aes(x = date, y = total_cases), data = italy)
+#+ geom_smooth(aes(x = date, y = total_cases), data=italy)
+```
+
+## Plot of Fatalities
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() +
+  geom_point(aes(x = date, y = total_deaths), data = italy)
+#+ geom_smooth(aes(x = date, y = total_deaths), data=italy)
+```
+
+## Plot of Diagnosed Positive Cases with Gauss Error Function
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+x <- 1:67
+ggplot(italy,aes(x)) +
+  geom_point(aes(x = days, y = total_cases)) +
+  stat_function(fun=function(x) 100000 + 100000 * erf(0.07*x - 3))
+```
+
+## Plot of Fatalities with Gauss Error Function
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(italy,aes(x)) +
+  geom_point(aes(x = days, y = total_deaths)) +
+  stat_function(fun=function(x) 11000 + 11000 * erf(0.068*x - 3))
+```
 
 # Australia Simulation
 
