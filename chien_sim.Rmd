@@ -207,6 +207,7 @@ sd(flex_fa)
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
 #output
 print(mean(flex_fa))
+
 print(sd(flex_fa))
 print(mean(flex_ca))
 print(sd(flex_ca))
