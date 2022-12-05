@@ -16,7 +16,7 @@ library(pracma)
 ## read data
 
 ```{r}
-data <- read.csv("https://raw.githubusercontent.com/stat400-csu/project-5/main/owid-covid-data.csv")
+data <- read.csv("owid-covid-data.csv")
 View(data)
 ```
 
@@ -83,7 +83,15 @@ for (j in 1:n){
   mc_data <- c(mc_data, china$total_cases[j]*gau_sample[,j])
 }
 mc_data <- matrix(mc_data, nrow=m, ncol=n)  # daily data to obtain 150 series of cases
-head(mc_data)
+```
+
+```{r}
+# multiply the nominal value with gau_sample for each day
+mc_data_fa <- vector()
+for (j in 1:n){
+  mc_data_fa <- c(mc_data_fa, china$total_deaths[j]*gau_sample[,j])
+}
+mc_data_fa <- matrix(mc_data_fa, nrow=m, ncol=n)  # daily data to obtain 150 series of cases
 ```
 
 ## Day of flex (trial)
@@ -133,6 +141,30 @@ mean(flex_day)
 sd(flex_day)
 ```
 
+```{r}
+flex_day_fa <- rep(NA, m)
+for (i in 1:m){
+  try <- mc_data_fa[i,]
+  model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=2200,b=2200,c=0.1,d=1))
+  est_try <- summary(model_try)$parameters
+  est_try <- est_try[, 1]
+  names(est_try) <- NULL
+  fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+  erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+  fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+  fn_try_deriv <- D(fn_try_deriv,'x')
+  x=seq(1,67,length.out=6700)
+  tmp <- eval(fn_try_deriv)
+  flex_day_fa[i] <- min(x[tmp < 0])
+}
+
+mean(flex_day_fa)
+sd(flex_day_fa)
+```
+
 ## MC (day of flex) plot
 
 ```{r}
@@ -142,45 +174,63 @@ ggplot() +
   labs(x = "Number of Monte Carlo simulation", y = "Day of flex, from February 15")
 ```
 
-## Day of flex (found without the fitted model)
-
 ```{r}
-flex <- rep(NA, m)
-
-# for each Monte Carlo simulation (m)
-for (i in 1:m){
-  temp_data <- mc_data[i,]
-  num_diff <- 0
-  # for each day
-  for (j in 1:(n-1)){
-    num_diff <- temp_data[j+1] - temp_data[j]
-    if (num_diff < 0){
-      flex[i] <- j
-      break
-    }
-  }
-}
-
-for (i in 1:m){
-  temp_data <- mc_data[i,]
-  num_diff <- rep(NA,n-1)
-  # for each day
-  for (j in 1:(n-1)){
-    num_diff[j] <- temp_data[j+1] - temp_data[j]
-  }
-  for (j in 1:(n-1)){
-    if (num_diff[j+1] < num_diff[j]){
-      flex[i] <- j
-      break
-    }
-  }
-}
-flex
+ggplot() +
+  geom_point(aes(x=1:m, y=flex_day_fa), color="red") +
+  geom_hline(yintercept=mean(flex_day_fa), color="blue") +
+  labs(x = "Number of Monte Carlo simulation", y = "Day of flex, from February 15")
 ```
 
+## Day of flex (no MC)
 
+```{r}
+try <- china$total_cases
+model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=2200,b=2200,c=0.1,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
 
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=seq(1,67,length.out=6700)
+tmp <- eval(fn_try_deriv)
+min(x[tmp < 0])
+```
 
+```{r}
+try <- china$total_deaths
+model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=2200,b=2200,c=0.1,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=seq(1,67,length.out=6700)
+tmp <- eval(fn_try_deriv)
+min(x[tmp < 0])
+```
+
+## superimpose the peak day to the plots
+
+```{r, warning=FALSE}
+fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)}
+positive +
+  stat_function(fun=fn_model1, color="blue") +
+  geom_segment(aes(x = 18.65517, y = 0, xend = 18.65517, yend = china$total_cases[19]), color="blue")
+fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
+fatalities +
+  stat_function(fun=fn_model2, color="blue") +
+  geom_segment(aes(x = 24.74384, y = 0, xend = 24.74384, yend = china$total_deaths[25]), color="blue")
+```
 
 
 
