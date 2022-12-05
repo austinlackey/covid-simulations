@@ -17,26 +17,37 @@ library(pracma)
 data <- read_csv("owid-covid-data.csv")
 ```
 
-<<<<<<< HEAD
-## The Monte Carlo Study
-=======
-## Introduction
->>>>>>> 228fa647b391554281e1ef645c97284819ef8f2a
+## The Monte Carlo Study: 
 
-- In this study by Ignazio Ciufolini and Antonio Paolozzi, they use a Gauss Error function that approximates the distribution of the cumulative positive cases of COVID-19 in China
-- They have then use the function to approximate the number of cumulative positive cases in Italy
-- Then performed a 150 Monte Carlo simulations to predict the peak and valley of the number of daily positive cases and fatalities
-- This study do not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc. 
+**Mathematical prediction of the time evolution of the COVID-19 pandemic in Italy by a Gauss error function and Monte Carlo simulations**
 
-## Ciufolini and Paolozzi's Study
+<br>
+
+*Author: Ignazio Ciufolini, Antonio Paolozzi*
+
+
+## Introduction : Ciufolini and Paolozzi's Study
+
+* In this study by Ignazio Ciufolini and Antonio Paolozzi, they use a Gauss Error function that approximates the distribution of the cumulative positive cases of COVID-19 in China
+  * They have then use the function to approximate the number of cumulative positive cases in Italy
+  * Then performed a 150 Monte Carlo simulations to predict the peak and valley of the number of daily positive cases and fatalities
+* This study do not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc. 
+
+## Cont.
 
 * Mathematical prediction of the time evolution of the COVID-19 pandemic by a Gauss error function and Monte Carlo simulations:
   * The number of cumulative diagnosed positive cases and fatalities in China approximates a gauss error function: $a+b*erf(c*x-d)$.
   * Predicted the potential number of cases in Italy.
   * Predicted the day in which the peak of the number of daily cases in Italy occurs.
 
+
 ## Overview of the Monte Carlo Simulation
 
+* create a random matrix : m X n
+  * m = number of random outcomes (*chosen to be 150*)
+  * n = number of observed days (*n = 1,...,j*)
+* each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
+  * multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j* **#FIXME#**
 - add more...
 
 
@@ -272,3 +283,5 @@ Error Function and Monte Carlo simulations. Submitted to BioRxiv on 03.26.2020 a
 03.27.2020 to MedRxiv. https://doi.org/10.1101/2020.03.27.20045104
 - Link to covid data:
 - https://covid19.who.int/
+- source to find the second derivative of fitted function:
+- https://proofwiki.org/wiki/Derivative_of_Error_Function
