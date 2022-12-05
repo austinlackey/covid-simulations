@@ -20,13 +20,6 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8)
 ```
 
 
-## Introduction
-
-- In this study by Ignazio Ciufolini and Antonio Paolozzi, they use a Gauss Error function that approximates the distribution of the cumulative positive cases of COVID-19 in China
-- They then use the function to approximate the number of cumulative positive cases in Italy
-- Then performed 150 Monte Carlo simulations to predict the peak and valley of the number of daily positive cases and fatalities
-- This study does not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc. 
-
 ## The Monte Carlo Study: 
 
 **Mathematical prediction of the time evolution of the COVID-19 pandemic in Italy by a Gauss error function and Monte Carlo simulations**
@@ -46,10 +39,9 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8)
 
 ## Cont.
 
-* Mathematical prediction of the time evolution of the COVID-19 pandemic by a Gauss error function and Monte Carlo simulations:
-  * The number of cumulative diagnosed positive cases and fatalities in China approximates a gauss error function: $a+b*erf(c*x-d)$.
-  * Predicted the potential number of cases in Italy.
-  * Predicted the day in which the peak of the number of daily cases in Italy occurs.
+* The number of cumulative diagnosed positive cases and fatalities in China approximates a gauss error function: $a+b*erf(c*x-d)$.
+* Predicted the potential number of cases in Italy.
+* Predicted the day in which the peak of the number of daily cases in Italy occurs.
 
 
 ## Overview of the Monte Carlo Simulation
@@ -380,14 +372,6 @@ print(cases_plot_Australia + geom_vline(xintercept = mean(day_of_flex_ca), color
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 print(fatalities_plot_Australia + geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed"))
 ```
-
-# Monte Carlo Simulations
-
-## China
-
-## Italy
-
-## Australia
 
 ## Works Cited
 - Link to study:
