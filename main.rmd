@@ -13,20 +13,18 @@ library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(pracma)
+library(minpack.lm)
 # read covid data
 data <- read_csv("owid-covid-data.csv")
+knitr::opts_chunk$set(fig.width=12, fig.height=8) 
 ```
 
-<<<<<<< HEAD
-## The Monte Carlo Study
-=======
 ## Introduction
->>>>>>> 228fa647b391554281e1ef645c97284819ef8f2a
 
 - In this study by Ignazio Ciufolini and Antonio Paolozzi, they use a Gauss Error function that approximates the distribution of the cumulative positive cases of COVID-19 in China
-- They have then use the function to approximate the number of cumulative positive cases in Italy
-- Then performed a 150 Monte Carlo simulations to predict the peak and valley of the number of daily positive cases and fatalities
-- This study do not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc. 
+- They then use the function to approximate the number of cumulative positive cases in Italy
+- Then performed 150 Monte Carlo simulations to predict the peak and valley of the number of daily positive cases and fatalities
+- This study does not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc. 
 
 ## Ciufolini and Paolozzi's Study
 
@@ -193,68 +191,170 @@ ggplot(italy,aes(x)) +
 
 # Australia Simulation
 
-## Australia Simulation
+## Initial Data for Cases in Australia
+
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
-library(tidyverse)
-library(dplyr)
-library(pracma)
-data <- read_csv("owid-covid-data.csv")
 australia <- data %>% filter(location == "Australia", date > "2020-06-01", date < "2020-12-19")
 australia <- subset(australia, select = c(date, total_cases, total_deaths))
 australia <- australia %>% mutate(days = 1:n())
 minimizedDays <- 70
 australiaPre <- australia %>% filter(days < minimizedDays)
-cases_Australia <- ggplot(australiaPre, aes(x = date, y = total_cases)) + 
-    geom_line() + 
-    labs(title = "Total Cases in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Date", y = "Total Cases")
-fatalities_Australia <- ggplot(australiaPre, aes(x = date, y = total_deaths)) +
-    geom_line() + 
-    labs(title = "Total Deaths in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Date", y = "Total Deaths")
+cases_Australia <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    labs(title = "Total Cases in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Cases")
+fatalities_Australia <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    labs(title = "Total Deaths in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_Australia)
+```
+
+## Initial Data for Fatalities in Australia
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(fatalities_Australia)
+```
+
+## Fitting Gauss Error Function to Cases in Australia
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 x <- 0:minimizedDays
-cases_function_australia <- function(x) 17200+10000*erf(0.04*x-2.4)
-fatalities_function_australia <- function(x) 500+400*erf(0.038*x-3.1)
+
+
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+cf <- summary(nlsLM(total_cases ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=10000,b=500,c=.02,d=1)))$parameters
+ff <- summary(nlsLM(total_deaths ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=100,b=100,c=.01,d=1)))$parameters
+
+
+cases_function_australia <- function(x) cf[1]+cf[2]*erf(cf[3]*x-cf[4])
+fatalities_function_australia <- function(x) ff[1]+ff[2]*erf(ff[3]*x-ff[4])
+
+
 cases_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
-    geom_line() + 
-    stat_function(fun=cases_function_australia, color="#d33636", size=2, linetype="dotted") +
-    scale_x_continuous(breaks = seq(0, minimizedDays, 1)) +
-    labs(title = "Total Cases in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Cases")
+    geom_point() + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, minimizedDays, 10)) +
+    labs(title = "Total Cases in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Cases")
 fatalities_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
-    geom_line() + 
-    stat_function(fun=fatalities_function_australia, color="#3333e2", size=2, linetype="dotted") +
-    scale_x_continuous(breaks = seq(0, minimizedDays, 1)) +
-    labs(title = "Total Deaths in Australia from 6/1/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Deaths")
-x <- 0:200
-cases_function_australia <- function(x) 17200+10000*erf(0.04*x-2.4)
-fatalities_function_australia <- function(x) 500+400*erf(0.038*x-3.1)
-cases_plot_Australia <- ggplot(australia, aes(x = days, y = total_cases)) + 
-    geom_line() + 
-    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
-    scale_x_continuous(breaks = seq(0, 200, 1)) +
-    labs(title = "Total Cases in Australia from 6/1/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Cases")
-fatalities_plot_Australia <- ggplot(australia, aes(x = days, y = total_deaths)) +
-    geom_line() + 
-    stat_function(fun=fatalities_function_australia, color="#3333e2", size=1.5) +
-    scale_x_continuous(breaks = seq(0, 200, 1)) +
-    labs(title = "Total Deaths in Australia from 6/1/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
+    geom_point() + 
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, minimizedDays, 10)) +
+    labs(title = "Total Deaths in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Deaths")
 ```
-```{r, echo=FALSE}
-# print(cases_Australia)
-# print(fatalities_Australia)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 print(cases_pre_plot_Australia)
-# print(fatalities_pre_plot_Australia)
-# cases_plot_Australia
-# print(fatalities_plot_Australia)
 ```
 
-## Australia results
+## Fitting Gauss Error Function to Fatalities in Australia
 
-```{r, echo=FALSE}
-# print(cases_Australia)
-# print(fatalities_Australia)
-# print(cases_pre_plot_Australia)
-# print(fatalities_pre_plot_Australia)
-cases_plot_Australia
-# print(fatalities_plot_Australia)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(fatalities_pre_plot_Australia)
+```
+
+## Applying the function to the whole cases dataset
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+x <- 0:200
+
+# cases_function_australia <- function(x) 17200+10000*erf(0.04*x-2.4)
+# fatalities_function_australia <- function(x) 500+400*erf(0.038*x-3.1)
+
+cases_plot_Australia <- ggplot(australia, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    labs(title = "Total Cases in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Cases")
+fatalities_plot_Australia <- ggplot(australia, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    labs(title = "Total Deaths in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_plot_Australia)
+```
+
+## Applying the function to the whole fatalities dataset
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(fatalities_plot_Australia)
+```
+
+## Using MonteCarlo Simulation to predict the day of flex
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+#Montecarlo Simulation
+set.seed(400)
+n <- dim(australia)[1]
+m <- 150
+sigma <- 0.1
+mu <- 1
+gau_sample <- matrix(rnorm(n*m, mean=mu, sd=sigma), nrow = m, ncol = n)
+
+mc_data_ca <- c()
+for (i in 1:n) {
+    mc_data_ca <- c(mc_data_ca, australia$total_cases[i]*gau_sample[,i])
+}
+mc_data_ca <- matrix(mc_data_ca, nrow = m, ncol = n)
+mc_data_fa <- c()
+for (i in 1:n) {
+    mc_data_fa <- c(mc_data_fa, australia$total_deaths[i]*gau_sample[,i])
+}
+mc_data_fa <- matrix(mc_data_fa, nrow = m, ncol = n)
+
+day_of_flex_ca <- rep(NA, m)
+for (i in 1:m) {
+    trial <- mc_data_ca[i,]
+    trial_model <- nlsLM(trial ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=15000,b=9000,c=.01,d=1))
+    model_coef <- summary(trial_model)$parameters[, 1]
+    # trial_function <- function(x, coef) {coef[1] + coef[2]*erf(coef[3]*x-coef[4])}
+    gauserr_derivative <- {2/sqrt(pi)*exp(-x^2)}
+    function_trial_derivative <- D(bquote(.(model_coef[2])*2/sqrt(pi)*exp(-(.(model_coef[3])*x-.(model_coef[4]))^2)), 'x')
+    x = seq(1, 200, length.out=6700)
+    temp <- eval(function_trial_derivative)
+    day_of_flex_ca[i] <- min(x[temp < 0])
+}
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+day_of_flex_fa <- rep(NA, m)
+for (i in 1:m) {
+    trial <- mc_data_fa[i,]
+    trial_model <- nlsLM(trial ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=300,b=200,c=.01,d=1))
+    model_coef <- summary(trial_model)$parameters[, 1]
+    # trial_function <- function(x, coef) {coef[1] + coef[2]*erf(coef[3]*x-coef[4])}
+    gauserr_derivative <- {2/sqrt(pi)*exp(-x^2)}
+    function_trial_derivative <- D(bquote(.(model_coef[2])*2/sqrt(pi)*exp(-(.(model_coef[3])*x-.(model_coef[4]))^2)), 'x')
+    x = seq(1, 200, length.out=6700)
+    temp <- eval(function_trial_derivative)
+    day_of_flex_fa[i] <- min(x[temp < 0])
+}
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+print(mean(day_of_flex_fa))
+print(sd(day_of_flex_fa))
+print(mean(day_of_flex_ca))
+print(sd(day_of_flex_ca))
+```
+
+- The mean of the day of flex for cases is 60.22 days and the standard deviation is 0.77 days.
+- The mean of the day of flex for fatalities is 81.4 days and the standard deviation is 0.69 days.
+
+## Applying the day of flex indicator to the data (Cases)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_plot_Australia + geom_vline(xintercept = mean(day_of_flex_ca), color="#d33636", size=1.5, linetype="dashed"))
+```
+
+## Applying the day of flex indicator to the data (Fatalities)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(fatalities_plot_Australia + geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed"))
 ```
 
 # Monte Carlo Simulations
