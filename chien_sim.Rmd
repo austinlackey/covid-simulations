@@ -9,8 +9,7 @@ library(pracma)
 
 ## R Markdown
 
-
-```{r cars}
+```{r}
 data <- read_csv("owid-covid-data.csv")
 ```
 
@@ -43,56 +42,190 @@ ggplot(china,aes(x)) +
   stat_function(fun=function(x) 1600 + 1600 * erf(0.071*x - 1.8))
 ```
 
+
+
+## ITALY
+
+
+
 ```{r}
 italy <- data %>% 
   filter(location=="Italy") %>% 
   filter(date <= "2020-04-21") %>%
   filter(date >= "2020-02-15") %>%
-  select(date, total_cases, total_deaths) %>% 
-  mutate(days = c(1:67))
+  select(date, total_cases, total_deaths) 
 italy[45:67,] <- NA
+italy <- italy %>% mutate(days = c(1:67))
 ```
 
 ```{r}
-ggplot() +
-  geom_point(aes(x = date, y = total_cases), data = italy)
-#+ geom_smooth(aes(x = date, y = total_cases), data=italy)
-ggplot() +
-  geom_point(aes(x = date, y = total_deaths), data = italy)
-#+ geom_smooth(aes(x = date, y = total_deaths), data=italy)
+ggplot(italy, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases")
+ggplot(italy, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths")
+
 ```
 
-
 ```{r}
+# # without nls fxn
+# ggplot(italy,aes(x)) +
+#   geom_point(aes(x = days, y = total_cases)) +
+#   stat_function(fun=function(x) 100000 + 100000 * erf(0.07*x - 3))
+# 
+# ggplot(italy,aes(x)) +
+#   geom_point(aes(x = days, y = total_deaths)) +
+#   stat_function(fun=function(x) 11000 + 11000 * erf(0.068*x - 3))
+
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+library(minpack.lm)
 x <- 1:67
-ggplot(italy,aes(x)) +
-  geom_point(aes(x = days, y = total_cases)) +
-  stat_function(fun=function(x) 100000 + 100000 * erf(0.07*x - 3))
 
-ggplot(italy,aes(x)) +
-  geom_point(aes(x = days, y = total_deaths)) +
-  stat_function(fun=function(x) 11000 + 11000 * erf(0.068*x - 3))
+# with nls fxn
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+
+c <- summary(nlsLM(total_cases~gauss_fn(days,a,b,c,d), data=italy, start=list(a=50000,b=50000,c=.01,d=1)))$parameters
+d <- summary(nlsLM(total_deaths~gauss_fn(days,a,b,c,d), data=italy, start=list(a=10000,b=10000,c=.01,d=1)))$parameters
+
+
+cf_italy <- function(x) c[1]+c[2]*erf(c[3]*x-c[4])
+df_italy <- function(x) d[1]+d[2]*erf(d[3]*x-d[4])
+
+
+ggplot(italy, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cf_italy, color="#d33636", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases")
+
+ggplot(italy, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    stat_function(fun=df_italy, color="#1b95ff", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths")
+```
+
+## montecarlo sim make matrix
+
+```{r}
+n <- 44
+m <- 150
+sigma <- 0.1
+mu <- 1
+gau_sample <- matrix(rnorm(n*m, mean=mu, sd=sigma), nrow = m, ncol = n)
+
+italy_mod <- italy[1:44,]
+italy_mod[c(1:6),"total_deaths"] = 0
+
+model_ca <- c()
+for (i in 1:n) {
+    model_ca <- c(model_ca, italy_mod$total_cases[i]*gau_sample[,i])
+}
+model_ca <- matrix(model_ca, nrow = m, ncol = n)
+
+model_fa <- c()
+for (i in 1:n) {
+    model_fa <- c(model_fa, italy_mod$total_deaths[i]*gau_sample[,i])
+}
+model_fa <- matrix(model_fa, nrow = m, ncol = n)
+```
+
+## Day of flex (trial)
+
+```{r}
+# trial 1
+test <- model_fa[11,]
+model_try <- nlsLM(test ~ gauss_fn(days,a,b,c,d), 
+                 data=italy_mod, 
+                 start=list(a=50000,b=50000,c=.01,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+# fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=seq(1,67,length.out=6700)
+tmp <- eval(fn_try_deriv)
+min(x[tmp < 0])
+```
+
+## 
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+# cases
+flex_ca <- rep(NA, m)
+for (i in 1:m) {
+  per_m <- model_ca[i, ]
+  model_try <-nlsLM(per_m ~ gauss_fn(days, a, b, c, d),
+                  data = italy_mod,
+                  start = list(a=50000,b=50000,c=.01,d=1))
+  get_coef <- summary(model_try)$parameters
+  get_coef <- get_coef[, 1]
+  names(get_coef) <- NULL
+  # Derivative of Gauss Error Function: 2 / sqrt(pi) * exp(-x ^ 2)
+  fn_try_deriv <-
+    bquote(.(get_coef[2]) * 2 / sqrt(pi) * exp(-(.(get_coef[3]) * x - .(get_coef[4])) ^ 2))
+  fn_try_deriv <- D(fn_try_deriv, 'x')
+  x = seq(1, 67, length.out = 6700)
+  tmp <- eval(fn_try_deriv)
+  flex_ca[i] <- min(x[tmp < 0])
+}
+mean(flex_ca)
+sd(flex_ca)
 ```
 
 ```{r}
-italy = italy[1:44,]
-n <- 44 # number of observed days
-m <- 150 # number of random outcomes
-
-# the Gaussian distribution (Normal) with mean = 1 and sigma = 0.1
-mu <- 1
-sig <- 0.1 # Gaussian distributed with a 10% standard deviation
-
-# each number in the matrix is part of a Gaussian distribution
-df <- matrix(rnorm(n*m, mu, sig), nrow=m, ncol=n)
-
-# multiplied the nominal value of the diagnosed positive cases of the jth day for the 150 numbers of the jth column of the random matrix mentioned above
-mc_data <- vector()
-for (j in 1:n){
-  mc_data <- c(mc_data, italy$total_cases[j]*df[,j])
+# fatalities
+flex_fa <- rep(NA, m)
+for (i in 1:m) {
+  per_m <- model_fa[i, ]
+  model_try <-nlsLM(per_m ~ gauss_fn(days, a, b, c, d),
+                  data = italy_mod,
+                  start = list(a=15000,b=15000,c=.01,d=1))
+  get_coef <- summary(model_try)$parameters
+  get_coef <- get_coef[, 1]
+  names(get_coef) <- NULL
+  # Derivative of Gauss Error Function: 2 / sqrt(pi) * exp(-x ^ 2)
+  fn_try_deriv <-
+    bquote(.(get_coef[2]) * 2 / sqrt(pi) * exp(-(.(get_coef[3]) * x - .(get_coef[4])) ^ 2))
+  fn_try_deriv <- D(fn_try_deriv, 'x')
+  x = seq(1, 67, length.out = 6700)
+  tmp <- eval(fn_try_deriv)
+  flex_fa[i] <- min(x[tmp < 0])
 }
+flex_fa <- flex_fa[-c(12,112,124,133)]
+mean(flex_fa)
+sd(flex_fa)
+```
 
-mc_data <- matrix(mc_data, nrow=m, ncol=n)  # daily data to obtain 150 series of cases
-head(mc_data)
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+#output
+print(mean(flex_fa))
+print(sd(flex_fa))
+print(mean(flex_ca))
+print(sd(flex_ca))
+```
+
+```{r}
+#plot
+ggplot(italy, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cf_italy, color="#d33636", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases") + 
+  geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1.5, linetype="dashed")
+
+ggplot(italy, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    stat_function(fun=df_italy, color="#1b95ff", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths") + 
+  geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1.5, linetype="dashed")
 ```
 
