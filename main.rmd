@@ -17,11 +17,16 @@ library(pracma)
 data <- read_csv("owid-covid-data.csv")
 ```
 
+<<<<<<< HEAD
 ## The Monte Carlo Study
+=======
+## Introduction
+>>>>>>> 228fa647b391554281e1ef645c97284819ef8f2a
 
-- In this study by Ignazio Ciufolini and Antonio Paolozzi, they use a Gauss Error to predict future trends of covid data spread.
-- Add more stuff here...
-
+- In this study by Ignazio Ciufolini and Antonio Paolozzi, they use a Gauss Error function that approximates the distribution of the cumulative positive cases of COVID-19 in China
+- They have then use the function to approximate the number of cumulative positive cases in Italy
+- Then performed a 150 Monte Carlo simulations to predict the peak and valley of the number of daily positive cases and fatalities
+- This study do not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc. 
 
 ## Ciufolini and Paolozzi's Study
 
@@ -30,11 +35,10 @@ data <- read_csv("owid-covid-data.csv")
   * Predicted the potential number of cases in Italy.
   * Predicted the day in which the peak of the number of daily cases in Italy occurs.
 
-## The Gauss Error function
+## Overview of the Monte Carlo Simulation
 
-- The Gauss Error function is widely accepted as a good way to model the spread of covid data, especially in China. By using
-the Gauss Error function, we can predict the spread of covid data in the future for other countries.
-- $a+b*erf(c*x-d)$
+- add more...
+
 
 # China Simulation
 
@@ -106,8 +110,8 @@ fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_cases), color = "red") +
   labs(x = "Days", y = "China cumulative number of cases") +
-  stat_function(fun=fn_model1, color="blue") +
-  geom_segment(aes(x = peak1, y = 0, xend = peak1, yend = china$total_cases[ceiling(peak1)]))
+  stat_function(fun=fn_model1) +
+  geom_segment(aes(x = peak1, y = 0, xend = peak1, yend = china$total_cases[ceiling(peak1)]), color="blue")
 ```
 
 ## Fit by the Gauss Error Function and Peak Day (Fatalities)
@@ -138,8 +142,8 @@ ggplot(data = china) +
   geom_point(aes(x = days, y = total_deaths), color = "red") +
   labs(x = "Days", y = "China cumulative number of fatalities") +
   ylim(0,5000) +
-  stat_function(fun=fn_model2, color="blue") +
-  geom_segment(aes(x = peak2, y = 0, xend = peak2, yend = china$total_deaths[ceiling(peak2)]))
+  stat_function(fun=fn_model2) +
+  geom_segment(aes(x = peak2, y = 0, xend = peak2, yend = china$total_deaths[ceiling(peak2)]), color="blue")
 ```
 
 # Italy Simulation
@@ -252,6 +256,14 @@ print(cases_pre_plot_Australia)
 cases_plot_Australia
 # print(fatalities_plot_Australia)
 ```
+
+# Monte Carlo Simulations
+
+## China
+
+## Italy
+
+## Australia
 
 ## Works Cited
 - Link to study:
