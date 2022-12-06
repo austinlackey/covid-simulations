@@ -207,7 +207,6 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
   * n = number of observed days (*n = 1,...,j*)
 * Each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
   * multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
-- add more...
 
 ## Using MonteCarlo Simulation to predict the day of flex
 
