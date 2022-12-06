@@ -207,7 +207,7 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
   * m = number of random outcomes (*chosen to be 150*)
   * n = number of observed days (*n = 1,...,j*)
 * Each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
-  * multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
+  * Multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
 * Each of the 150 simulations were fitted with the Gauss error function
 * Then determined the date of the flex for each simulation
 
