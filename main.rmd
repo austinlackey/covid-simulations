@@ -32,12 +32,9 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8)
 
 ## Introduction : Ciufolini and Paolozzi's Study
 
-* The number of cumulative diagnosed positive cases and fatalities in China approximates a gauss error function:  
-$a+b*erf(c*x-d)$.
-* Used the function to approximate the number of cumulative positive cases in Italy
-* Performed a 150 Monte Carlo simulations to predict the day in which the peak of the number of daily cases in Italy occurs.
-* This study do not take into account factors such as daily nasopharyngeal swabs, medical, social distancing, etc.
-
+* The time evolution of he number of cumulative diagnosed positive cases and fatalities in China approximates the distribution of a gauss error function: $a+b*erf(c*x-d)$.
+* Performed the function on Italy data to approximate the number of cases.
+* Performed 150 Monte Carlo simulations to predict the day in which the peak of the number of daily cases in Italy occurs.
 
 # China Simulation
 
@@ -53,7 +50,7 @@ china <- data |>
 
 # recreate plots
 positive <- ggplot(data = china) +
-  geom_point(aes(x = date, y = total_cases), color = "red") +
+  geom_point(aes(x = date, y = total_cases)) +
   labs(x = "Date", y = "China cumulative number of cases")
 positive
 ```
@@ -62,7 +59,7 @@ positive
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 ggplot(data = china) +
-  geom_point(aes(x = date, y = total_deaths), color = "red") +
+  geom_point(aes(x = date, y = total_deaths)) +
   labs(x = "Date", y = "China cumulative number of fatalities") +
   ylim(0,5000)
 ```
@@ -107,10 +104,10 @@ model1 <- nls(total_cases ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=100
 # summary(model1)$parameters
 fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)}
 ggplot(data = china) +
-  geom_point(aes(x = days, y = total_cases), color = "red") +
+  geom_point(aes(x = days, y = total_cases)) +
   labs(x = "Days", y = "China cumulative number of cases") +
-  stat_function(fun=fn_model1) +
-  geom_segment(aes(x = peak1, y = 0, xend = peak1, yend = china$total_cases[ceiling(peak1)]), color="blue")
+  stat_function(fun=fn_model1, color="#d33636", size=1.5) +
+  geom_vline(xintercept = peak1, color="#d33636", size=1.5, linetype="dashed")
 ```
 
 ## Fit by the Gauss Error Function and Peak Day (Fatalities)
@@ -141,8 +138,8 @@ ggplot(data = china) +
   geom_point(aes(x = days, y = total_deaths), color = "red") +
   labs(x = "Days", y = "China cumulative number of fatalities") +
   ylim(0,5000) +
-  stat_function(fun=fn_model2) +
-  geom_segment(aes(x = peak2, y = 0, xend = peak2, yend = china$total_deaths[ceiling(peak2)]), color="blue")
+  stat_function(fun=fn_model2, color="#1b95ff", size=1.5) +
+  geom_vline(xintercept = peak2, color="#1b95ff", size=1.5, linetype="dashed")
 ```
 
 # Italy Simulation
