@@ -1,27 +1,72 @@
 ---
-title: "Paper"
+title: "MonteCarlo Simulation's of the Covid-19 Pandemic"
 author: "Austin Lackey, Chien Lin and Jin Peng"
-output:
-  pdf_document: default
-  html_document:
+date: "Tuesday, December 6th, 2022"
+output: 
+  pdf_document:
+    toc: TRUE
+    toc_depth: 2
+    number_sections: TRUE
     df_print: paged
+    fig_caption: TRUE
+    highlight: tango
 ---
-
-## Introduction
-### Out motivtion for this project is to...
-
-```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+```{r setup, include=FALSE}
 # useful libraries
 library(tidyverse)
 library(pracma)
 library(minpack.lm)
 # read covid data
 data <- read_csv("owid-covid-data.csv")
-knitr::opts_chunk$set(fig.width=12, fig.height=8) 
+set.seed(420)
 ```
 
-```{r}
-print(head(data))
-```
+# Background and Motivation (Should we do an Abstract?)
 
-# Insert More Below....
+*Insert text here*
+
+## Ciufolini and Paolozzi's MonteCarlo Study
+
+*Insert text here*
+
+
+
+
+# Jin: China
+
+*Insert text here*
+
+# Chien: Italy
+
+*Insert text here*
+
+# Austin: Australia
+
+## United States Anomaly
+
+*Insert text here*
+
+
+
+
+
+
+
+# Simulation Analysis Summary
+
+*Insert text here*
+
+# Potential Improvements
+
+*Insert text here*
+
+# Works Cited
+
+- Link to the study:
+  - I. Ciufolini, A. Paolozzi, Prediction of the time evolution of the Covid-19 Pandemic in Italy by a Gauss
+Error Function and Monte Carlo simulations. Submitted to BioRxiv on 03.26.2020 and transferred on
+03.27.2020 to MedRxiv. https://doi.org/10.1101/2020.03.27.20045104
+- Link to the covid data used:
+  - https://covid19.who.int/
+- Source to find the second derivative of fitted function:
+  - https://proofwiki.org/wiki/Derivative_of_Error_Function
