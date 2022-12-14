@@ -137,7 +137,7 @@ model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10
 #summary(model2)$parameters
 fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
 ggplot(data = china) +
-  geom_point(aes(x = days, y = total_deaths), color = "red") +
+  geom_point(aes(x = days, y = total_deaths)) +
   labs(x = "Days", y = "China cumulative number of fatalities") +
   ylim(0,5000) +
   stat_function(fun=fn_model2, color="#1b95ff", size=1.5) +
@@ -149,6 +149,7 @@ ggplot(data = china) +
 ## Initial Data for Cases in Italy
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+set.seed(400)
 # extract Italy data
 italy <- data %>% 
   filter(location=="Italy") %>% 
@@ -188,7 +189,7 @@ df_italy <- function(x) d[1]+d[2]*erf(d[3]*x-d[4])
 #plot
 ggplot(italy, aes(x = days, y = total_cases)) + 
     geom_point() + 
-    stat_function(fun=cf_italy, color="#d33636", size=2, linetype="solid") +
+    stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases")
 ```
@@ -199,7 +200,7 @@ ggplot(italy, aes(x = days, y = total_cases)) +
 #plot
 ggplot(italy, aes(x = days, y = total_deaths)) +
     geom_point() + 
-    stat_function(fun=df_italy, color="#1b95ff", size=2, linetype="solid") +
+    stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths")
 ```
@@ -210,15 +211,16 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
   * m = number of random outcomes (*chosen to be 150*)
   * n = number of observed days (*n = 1,...,j*)
 * Each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
-  * multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
-- add more...
+  * Multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
+* Each of the 150 simulations were fitted with the Gauss error function
+* Then determined the date of the flex for each simulation
 
 ## Using MonteCarlo Simulation to predict the day of flex
 
 - The mean of the day of flex for cases is 40.59 days and the standard deviation is 5.222832 days.
 - The mean of the day of flex for fatalities is 43.46 days and the standard deviation is 5.228381 days.
 
-## 150 Monte Carlo simulations plotted
+## MonteCarlo Simulation Data (Cases) (150 trials)
 
 Each red dot corresponds to the day of occurrence of the flex obtained with each of the 150 Monte Carlo simulations
 
@@ -269,9 +271,9 @@ sd(flex_ca)
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 ggplot() +
-  geom_point(aes(x=1:m, y=flex_ca), color="red") +
-  geom_hline(yintercept=mean(flex_ca), color="blue") +
-  labs(x = "Number of Monte Carlo simulation", y = "Day of flex, from February 15")
+    geom_point(aes(x=1:m, y=flex_ca), color="#d33636") +
+    geom_hline(yintercept=mean(flex_ca), color="#d33636", linetype="dashed", size=1.5) + 
+    labs(title = "MonteCarlo Simulation for Day of Flex (Cases)", x = "Trial", y = "Day of Flex")
 ```
 
 ## Applying the day of flex indicator to the plot (Cases)
@@ -280,13 +282,13 @@ ggplot() +
 #plot(cs)
 ggplot(italy, aes(x = days, y = total_cases)) + 
     geom_point() + 
-    stat_function(fun=cf_italy, color="#d33636", size=2, linetype="solid") +
+    stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases") + 
-  geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1.5, linetype="dashed")
+  geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1, linetype="dashed")
 ```
 
-## Applying the day of flex indicator to the plot (Fatalities)
+## MonteCarlo Simulation Data (Fatalities) (150 trials)
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 # fatalities
@@ -312,14 +314,23 @@ mean(flex_fa)
 sd(flex_fa)
 ```
 
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() +
+    geom_point(aes(x=1:146, y=flex_fa), color="#1b95ff") +
+    geom_hline(yintercept=mean(flex_fa), color="#1b95ff", linetype="dashed", size=1.5) + 
+    labs(title = "MonteCarlo Simulation for Day of Flex (Fatalities)", x = "Trial", y = "Day of Flex")
+```
+
+## Applying the day of flex indicator to the plot (Fatalities)
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #plot(ft)
 ggplot(italy, aes(x = days, y = total_deaths)) +
     geom_point() +
-    stat_function(fun=df_italy, color="#1b95ff", size=2, linetype="solid") +
+    stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths") +
-  geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1.5, linetype="dashed")
+  geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1, linetype="dashed")
 ```
 
 

@@ -97,13 +97,13 @@ df_italy <- function(x) d[1]+d[2]*erf(d[3]*x-d[4])
 
 ggplot(italy, aes(x = days, y = total_cases)) + 
     geom_point() + 
-    stat_function(fun=cf_italy, color="#d33636", size=2, linetype="solid") +
+    stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases")
 
 ggplot(italy, aes(x = days, y = total_deaths)) +
     geom_point() + 
-    stat_function(fun=df_italy, color="#1b95ff", size=2, linetype="solid") +
+    stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths")
 ```
@@ -133,29 +133,28 @@ for (i in 1:n) {
 model_fa <- matrix(model_fa, nrow = m, ncol = n)
 ```
 
-## Day of flex (trial)
+## Day of flex (test)
 
 ```{r}
-# trial 1
-test <- model_fa[11,]
-model_try <- nlsLM(test ~ gauss_fn(days,a,b,c,d), 
-                 data=italy_mod, 
-                 start=list(a=50000,b=50000,c=.01,d=1))
-est_try <- summary(model_try)$parameters
-est_try <- est_try[, 1]
-names(est_try) <- NULL
-# fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
-
-erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
-
-fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
-fn_try_deriv <- D(fn_try_deriv,'x')
-x=seq(1,67,length.out=6700)
-tmp <- eval(fn_try_deriv)
-min(x[tmp < 0])
+# test <- model_fa[11,]
+# model_try <- nlsLM(test ~ gauss_fn(days,a,b,c,d), 
+#                  data=italy_mod, 
+#                  start=list(a=50000,b=50000,c=.01,d=1))
+# est_try <- summary(model_try)$parameters
+# est_try <- est_try[, 1]
+# names(est_try) <- NULL
+# # fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+# 
+# erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+# 
+# fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+# fn_try_deriv <- D(fn_try_deriv,'x')
+# x=seq(1,67,length.out=6700)
+# tmp <- eval(fn_try_deriv)
+# min(x[tmp < 0])
 ```
 
-## 
+## Day of flex
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 # cases
@@ -207,7 +206,6 @@ sd(flex_fa)
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
 #output
 print(mean(flex_fa))
-
 print(sd(flex_fa))
 print(mean(flex_ca))
 print(sd(flex_ca))
@@ -217,16 +215,16 @@ print(sd(flex_ca))
 #plot
 ggplot(italy, aes(x = days, y = total_cases)) + 
     geom_point() + 
-    stat_function(fun=cf_italy, color="#d33636", size=2, linetype="solid") +
+    stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Cases in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Cases") + 
-  geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1.5, linetype="dashed")
+  geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1, linetype="dashed")
 
 ggplot(italy, aes(x = days, y = total_deaths)) +
     geom_point() + 
-    stat_function(fun=df_italy, color="#1b95ff", size=2, linetype="solid") +
+    stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     labs(title = "Total Deaths in Italy from 2/15/2020 to 3/29/2020 (44 days)", x = "Days", y = "Total Deaths") + 
-  geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1.5, linetype="dashed")
+  geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1, linetype="dashed")
 ```
 

@@ -1,27 +1,673 @@
 ---
-title: "Paper"
+title: "MonteCarlo Simulation's of the Covid-19 Pandemic"
 author: "Austin Lackey, Chien Lin and Jin Peng"
-output:
-  pdf_document: default
-  html_document:
+date: "Tuesday, December 6th, 2022"
+output: 
+  pdf_document:
+    toc: TRUE
+    toc_depth: 2
+    number_sections: TRUE
     df_print: paged
+    fig_caption: TRUE
+    highlight: tango
 ---
-
-## Introduction
-### Out motivtion for this project is to...
-
-```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+```{r setup, include=FALSE}
 # useful libraries
 library(tidyverse)
 library(pracma)
 library(minpack.lm)
 # read covid data
 data <- read_csv("owid-covid-data.csv")
-knitr::opts_chunk$set(fig.width=12, fig.height=8) 
+set.seed(420)
+knitr::opts_chunk$set(fig.width=3, fig.height=3) 
 ```
 
-```{r}
-print(head(data))
+# Introduction
+
+## Background
+
+In our MonteCarlo simulation analysis, we fit a gauss-error function over cumulaative Covid-19 data.
+In the study mentioned below, the authors stated that it is widely accepted that China's Covid-19 data follows a gauss-error function. 
+We decided to test this hypothesis by fitting a gauss-error function over the data of China, Italy, and the United States using data from the World Health Organization (WHO).
+
+We then used the fitted function to predict the time evolution of the Covid-19 Pandemic in each country.
+For context to our project, time evolution is the rate of change of the number of cases over time.
+By fitting a gauss-error function to partial data, we are able to prefict the day of flex point (which is the day of the highest cases/fatality occurrence) for that given country.
+Our primary motivation for this project is to see if the gauss-error function is a good fit for various different countries and use MonteCarlo simulation to predict for future trends where the data are "unknown".
+
+The results of this study are based on mathematical and statistic approaches alone and do not take into account any of the influential factors such as, stated in the study: number of daily nasopharyngeal swabs, medical, social distancing, virological and epidemiological or models of contamination diffusion. Consequently, the accuracy of this study in terms of real world application, may not be too useful.
+
+## Ciufolini and Paolozzi's MonteCarlo Study
+
+Our project is an extension and replication of the study done by Ciufolini and Paolozzi. 
+*"Mathematical prediction of the time evolution of the COVID-19 pandemic in Italy by a Gauss error function and Monte Carlo simulations"*. 
+The authors of this study used a MonteCarlo simulation to fit a gauss-error function over the data of China and extending it to Italy.
+In their study, it was widely accepted that China's Covid-19 data follows a gauss-error function.  
+
+$$Gauss-Error Function =a+b*erf(c*x-d)$$
+
+The authors perfomed a MonteCarlo simulation with 150 replications to approximate the day of flex point for China and Italy.
+The use of the MonteCarlo simulation was crucial to their study's success as reported cases and fatalities can differ up `to 10%` from the actual number of cases and fatalities.
+
+
+
+
+# Jin: China
+
+## Available Official Data (Positive Cases)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
+# extract China data of interest
+china <- data |>
+  filter(location == "China") |>
+  filter(date >= "2020-01-22", date <= "2020-03-28") |>
+  select(c(date, total_cases, total_deaths)) |>
+  mutate(days = 1:n())
+
+# recreate plots
+positive <- ggplot(data = china) +
+  geom_point(aes(x = date, y = total_cases)) +
+  theme(title =element_text(size=6)) +
+  labs(x = "Date", y = "China cumulative number of cases")
+positive
 ```
 
-# Insert More Below....
+## Available Official Data (Fatalities)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
+ggplot(data = china) +
+  geom_point(aes(x = date, y = total_deaths)) +
+  theme(title =element_text(size=6)) +
+  labs(x = "Date", y = "China cumulative number of fatalities") +
+  ylim(0,5000)
+```
+
+## Fit by the Gauss Error Function
+
+Apply an $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$ of a Gauss error function model: $a+b*erf(c*x-d)$.
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+```
+
+```{r, message=FALSE, warning=FALSE}
+model <- nls(total_cases ~ gauss_fn(days,a,b,c,d), 
+             data=china, 
+             start=list(a=10000,b=10000,c=0.1,d=1))
+```
+
+## Fit by the Gauss Error Function and Peak Day (Positive Cases)
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+try <- china$total_cases
+model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=2200,b=2200,c=0.1,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=seq(1,67,length.out=6700)
+tmp <- eval(fn_try_deriv)
+peak1 <- min(x[tmp < 0])
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+model1 <- nls(total_cases ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+# summary(model1)$parameters
+fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)}
+ggplot(data = china) +
+  geom_point(aes(x = days, y = total_cases)) +
+  theme(title =element_text(size=6)) +
+  labs(x = "Days", y = "China cumulative number of cases") +
+  stat_function(fun=fn_model1, color="#d33636", size=1.5) +
+  geom_vline(xintercept = peak1, color="#d33636", size=1.5, linetype="dashed")
+```
+
+## Fit by the Gauss Error Function and Peak Day (Fatalities)
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+try <- china$total_deaths
+model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=2200,b=2200,c=0.1,d=1))
+est_try <- summary(model_try)$parameters
+est_try <- est_try[, 1]
+names(est_try) <- NULL
+fn_try <- function(x, ests) {ests[1]  + ests[2] * erf(ests[3] * x - ests[4])}
+
+# find the second derivative of fitted function
+# source: https://proofwiki.org/wiki/Derivative_of_Error_Function
+erf_deriv <- function(x) {2/sqrt(pi)*exp(-x^2)}
+fn_try_deriv <- bquote(.(est_try[2]) * 2/sqrt(pi) * exp(-(.(est_try[3]) * x - .(est_try[4]))^2))
+fn_try_deriv <- D(fn_try_deriv,'x')
+x=seq(1,67,length.out=6700)
+tmp <- eval(fn_try_deriv)
+peak2 <- min(x[tmp < 0])
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+#summary(model2)$parameters
+fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
+ggplot(data = china) +
+  geom_point(aes(x = days, y = total_deaths)) +
+  theme(title =element_text(size=6)) +
+  labs(x = "Days", y = "China cumulative number of fatalities") +
+  ylim(0,5000) +
+  stat_function(fun=fn_model2, color="#1b95ff", size=1.5) +
+  geom_vline(xintercept = peak2, color="#1b95ff", size=1.5, linetype="dashed")
+```
+
+
+
+# Italy
+
+## Preview of the Data
+
+After the Gauss Error function is fitted to the China data, and verified that the function fits well with both the cases data and the fatality data, the study then proceeds to fit the function to the data from Italy. 
+
+In this part, we will fit the Gauss Error function to the Italy data and verify if the function is well fitted. For MonteCarlo simulation purposes we will only use Italy data from date 2/15/2020 to 3/29/2020, even though data for future dates are available.
+
+First, we will take a look at the data:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+set.seed(400)
+# extract Italy data
+italy <- data %>% 
+  filter(location=="Italy") %>% 
+  filter(date <= "2020-04-21") %>%
+  filter(date >= "2020-02-15") %>%
+  select(date, total_cases, total_deaths)
+  #ref: %>% mutate(days = c(1:67))
+italy[45:67,] <- NA
+italy <- italy %>% mutate(days = c(1:67))
+
+#plot
+ggplot(italy, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure I: Total Cases in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Cases")
+#plot
+ggplot(italy, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure II: Total Deaths in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Deaths")
+```
+
+As you can see, the data points already follows a pattern that looks like the cumulative distribution of a Gauss Error function.
+
+## Fitting Gauss Error Function to Italy data
+
+We will verify with the function fitted: 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+
+x <- 1:67
+
+c <- summary(nlsLM(total_cases~gauss_fn(days,a,b,c,d), data=italy, start=list(a=50000,b=50000,c=.01,d=1)))$parameters
+d <- summary(nlsLM(total_deaths~gauss_fn(days,a,b,c,d), data=italy, start=list(a=10000,b=10000,c=.01,d=1)))$parameters
+
+cf_italy <- function(x) c[1]+c[2]*erf(c[3]*x-c[4])
+df_italy <- function(x) d[1]+d[2]*erf(d[3]*x-d[4])
+
+#plot
+ggplot(italy, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure III: Total Cases in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Cases")
+#plot
+ggplot(italy, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure IV: Total Deaths in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Deaths")
+```
+
+## Monte Carlo Simulation
+
+The Monte Carlo method we will simulate will be as follows:
+
+* Create a random matrix : m X n
+  * m = number of random outcomes (*chosen to be 150*)
+  * n = number of observed days (*n = 1,...,j*)
+* Each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
+  * Multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
+* Each of the 150 simulations were fitted with the Gauss error function
+* Then determined the date of the flex for each simulation
+
+Basically, we want to simulate 150 of the function drawn according to the data (which means for different data, the function fitted will have different parameters) with a noise of a Normal random distribution with mean 1 and standard deviation 1.
+
+## MonteCarlo Simulation for Predicting Day of Flex for Italy
+
+Then we run the simulation to get the mean day of the highest case/fatality: 
+
+### MonteCarlo Simulation for Cumulative Positive Cases of COVID-19 in Italy
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+n <- 44
+m <- 150
+sigma <- 0.1
+mu <- 1
+gau_sample <- matrix(rnorm(n*m, mean=mu, sd=sigma), nrow = m, ncol = n)
+
+italy_mod <- italy[1:44,]
+
+model_ca <- c()
+for (i in 1:n) {
+    model_ca <- c(model_ca, italy_mod$total_cases[i]*gau_sample[,i])
+}
+model_ca <- matrix(model_ca, nrow = m, ncol = n)
+
+model_fa <- c()
+for (i in 1:n) {
+    model_fa <- c(model_fa, italy_mod$total_deaths[i]*gau_sample[,i])
+}
+model_fa <- matrix(model_fa, nrow = m, ncol = n)
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+# cases
+flex_ca <- rep(NA, m)
+for (i in 1:m) {
+  per_m <- model_ca[i, ]
+  model_try <-nlsLM(per_m ~ gauss_fn(days, a, b, c, d),
+                  data = italy_mod,
+                  start = list(a=50000,b=50000,c=.01,d=1))
+  get_coef <- summary(model_try)$parameters
+  get_coef <- get_coef[, 1]
+  names(get_coef) <- NULL
+  # Derivative of Gauss Error Function: 2 / sqrt(pi) * exp(-x ^ 2)
+  fn_try_deriv <-
+    bquote(.(get_coef[2]) * 2 / sqrt(pi) * exp(-(.(get_coef[3]) * x - .(get_coef[4])) ^ 2))
+  fn_try_deriv <- D(fn_try_deriv, 'x')
+  x = seq(1, 67, length.out = 6700)
+  tmp <- eval(fn_try_deriv)
+  flex_ca[i] <- min(x[tmp < 0])
+}
+mean(flex_ca)
+sd(flex_ca)
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() +
+    geom_point(aes(x=1:m, y=flex_ca), color="#d33636") +
+    geom_hline(yintercept=mean(flex_ca), color="#d33636", linetype="dashed", size=1.5) + 
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure V: Scatter Plot of MC Cases Day of Flex (Italy)", x = "Trial", y = "Day of Flex")
+#plot(cs)
+ggplot(italy, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure VI: Total Cases in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Cases") + 
+  geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1, linetype="dashed")
+```
+
+The mean of the day of flex for cases is 40.59 days and the standard deviation is 5.222832 days.
+
+In figure V,each red dot corresponds to the day of occurrence of the flex obtained with each of the 150 Monte Carlo simulations.
+
+### MonteCarlo Simulation for Cumulative Fatalities of COVID-19 in Italy
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+# fatalities
+flex_fa <- rep(NA, m)
+for (i in 1:m) {
+  per_m <- model_fa[i, ]
+  model_try <-nlsLM(per_m ~ gauss_fn(days, a, b, c, d),
+                  data = italy_mod,
+                  start = list(a=15000,b=15000,c=.01,d=1))
+  get_coef <- summary(model_try)$parameters
+  get_coef <- get_coef[, 1]
+  names(get_coef) <- NULL
+  # Derivative of Gauss Error Function: 2 / sqrt(pi) * exp(-x ^ 2)
+  fn_try_deriv <-
+    bquote(.(get_coef[2]) * 2 / sqrt(pi) * exp(-(.(get_coef[3]) * x - .(get_coef[4])) ^ 2))
+  fn_try_deriv <- D(fn_try_deriv, 'x')
+  x = seq(1, 67, length.out = 6700)
+  tmp <- eval(fn_try_deriv)
+  flex_fa[i] <- min(x[tmp < 0])
+}
+flex_fa <- flex_fa[-c(12,112,124,133)]
+mean(flex_fa)
+sd(flex_fa)
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() +
+    geom_point(aes(x=1:146, y=flex_fa), color="#1b95ff") +
+    geom_hline(yintercept=mean(flex_fa), color="#1b95ff", linetype="dashed", size=1.5) + 
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure VII: Scatter Plot of MC Fatality Day of Flex (Italy)", x = "Trial", y = "Day of Flex")
+#plot(ft)
+ggplot(italy, aes(x = days, y = total_deaths)) +
+    geom_point() +
+    stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, 67, 10)) +
+    theme(title =element_text(size=6)) +
+    labs(title = "Figure VIII: Total Deaths in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Deaths") +
+  geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1, linetype="dashed")
+```
+
+The mean of the day of flex for fatalities is 43.46 days and the standard deviation is 5.228381 days. As you can see, the variance is high for both cases data and fatality data, an assumption might be because of smaller sample size.
+
+
+
+# Austin: Australia
+
+## Fitting a Gauss-Error Function to Australia's Data
+
+We wanted to extend the findings from the study done by Ciufolini and Paolozzi to other countries.
+The first country that we decided to test was Australia.
+Since we have access to all of Australia's data at the time of writing this report, we decided to test the gauss-error function on a subset timeframe of the entire dataset.
+To begin, we limited our data to the timeframe of 6/2/2020 to 8/9/2020 which is 70 days.
+As you can see in Figure A and Figure B, the data begins to follow a gauss-error function shape.
+The days on the x-axis are the number of days following 6/2/2020.
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+australia <- data %>% filter(location == "Australia", date > "2020-06-01", date < "2020-12-19")
+australia <- subset(australia, select = c(date, total_cases, total_deaths))
+australia <- australia %>% mutate(days = 1:n())
+minimizedDays <- 70
+australiaPre <- australia %>% filter(days < minimizedDays)
+cases_Australia <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    labs(title = "Figure A: Total Cases in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Cases")
+fatalities_Australia <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    labs(title = "Figure B: Total Deaths in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_Australia)
+print(fatalities_Australia)
+```
+
+
+In order to fit a gauss-error function to the data, we used the `nlsLM` function from the `minpack.lm` library.
+This allows us to fit a gauss-error function to the data and find the parameters of the function.
+As you can see in Figures C and D, the fitted function follows the data very well.
+One important distinction to note is that the fatalities begin to follow the gauss-error function shape at a later time than the cases.
+This makes sense as death rates begin to increase after the number of cases begin to increase.
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+x <- 0:minimizedDays
+
+
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+cf <- summary(nlsLM(total_cases ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=10000,b=500,c=.02,d=1)))$parameters
+ff <- summary(nlsLM(total_deaths ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=100,b=100,c=.01,d=1)))$parameters
+
+
+cases_function_australia <- function(x) cf[1]+cf[2]*erf(cf[3]*x-cf[4])
+fatalities_function_australia <- function(x) ff[1]+ff[2]*erf(ff[3]*x-ff[4])
+
+
+cases_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, minimizedDays, 10)) +
+    labs(title = "Figure C: Total Cases in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Cases")
+fatalities_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=2, linetype="solid") +
+    scale_x_continuous(breaks = seq(0, minimizedDays, 10)) +
+    labs(title = "Figure D: Total Deaths in Australia from 6/2/2020 to 8/9/2020 (70 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_pre_plot_Australia)
+print(fatalities_pre_plot_Australia)
+```
+
+## Extrapolating the Gauss-Error Function to Australia's Future Data
+
+Once we have a fitted gauss-error function, we can extrapolate the function to the future.
+We decided to extrapolate the function to 200 days which is an increase from China's and Italy's extrapolation. 
+The reasoning for this increase is that it takes longer for the number of cases to increase in Australia than it does in China and Italy.
+We are not quite sure why this is the case, but we believe it is due to the fact that Australia had different restrictions in place than China and Italy.
+As you can see in Figures E and F, the extrapolated function starts to show us an idea of what the future of Australia's data could look like if the current trend continues.
+The first thing we noticed was that the cases were getting close to their expected plateau and the fatalities were just beggining to increase.
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+x <- 0:200
+
+# cases_function_australia <- function(x) 17200+10000*erf(0.04*x-2.4)
+# fatalities_function_australia <- function(x) 500+400*erf(0.038*x-3.1)
+
+cases_plot_Australia <- ggplot(australia, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    labs(title = "Total Cases in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Cases")
+fatalities_plot_Australia <- ggplot(australia, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    theme(title =element_text(size=6)) +
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    labs(title = "Total Deaths in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+cases_plot_Australia_future <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    xlim(0, 200) +
+    labs(title = "Figure E: Extrapolating Future Case Data with Gauss Error Function", x = "Days", y = "Total Cases")
+fatalities_plot_Australia_future <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    theme(title =element_text(size=6)) +
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    xlim(0, 200) +
+    labs(title = "Figure F: Extrapolating Future Fatality Data with Gauss Error Function", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_plot_Australia_future)
+print(fatalities_plot_Australia_future)
+```
+
+## MonteCarlo Simulation for Australia's Day of Flex
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+#Montecarlo Simulation
+set.seed(400)
+n <- dim(australia)[1]
+m <- 150
+sigma <- 0.1
+mu <- 1
+gau_sample <- matrix(rnorm(n*m, mean=mu, sd=sigma), nrow = m, ncol = n)
+
+mc_data_ca <- c()
+for (i in 1:n) {
+    mc_data_ca <- c(mc_data_ca, australia$total_cases[i]*gau_sample[,i])
+}
+mc_data_ca <- matrix(mc_data_ca, nrow = m, ncol = n)
+mc_data_fa <- c()
+for (i in 1:n) {
+    mc_data_fa <- c(mc_data_fa, australia$total_deaths[i]*gau_sample[,i])
+}
+mc_data_fa <- matrix(mc_data_fa, nrow = m, ncol = n)
+
+day_of_flex_ca <- rep(NA, m)
+for (i in 1:m) {
+    trial <- mc_data_ca[i,]
+    trial_model <- nlsLM(trial ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=15000,b=9000,c=.01,d=1))
+    model_coef <- summary(trial_model)$parameters[, 1]
+    # trial_function <- function(x, coef) {coef[1] + coef[2]*erf(coef[3]*x-coef[4])}
+    gauserr_derivative <- {2/sqrt(pi)*exp(-x^2)}
+    function_trial_derivative <- D(bquote(.(model_coef[2])*2/sqrt(pi)*exp(-(.(model_coef[3])*x-.(model_coef[4]))^2)), 'x')
+    x = seq(1, 200, length.out=6700)
+    temp <- eval(function_trial_derivative)
+    day_of_flex_ca[i] <- min(x[temp < 0])
+}
+```
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+day_of_flex_fa <- rep(NA, m)
+for (i in 1:m) {
+    trial <- mc_data_fa[i,]
+    trial_model <- nlsLM(trial ~ gauss_fn(days,a,b,c,d), data=australia, start=list(a=300,b=200,c=.01,d=1))
+    model_coef <- summary(trial_model)$parameters[, 1]
+    # trial_function <- function(x, coef) {coef[1] + coef[2]*erf(coef[3]*x-coef[4])}
+    gauserr_derivative <- {2/sqrt(pi)*exp(-x^2)}
+    function_trial_derivative <- D(bquote(.(model_coef[2])*2/sqrt(pi)*exp(-(.(model_coef[3])*x-.(model_coef[4]))^2)), 'x')
+    x = seq(1, 200, length.out=6700)
+    temp <- eval(function_trial_derivative)
+    day_of_flex_fa[i] <- min(x[temp < 0])
+}
+```
+
+In order to account for the `10%` variance in the reported data, we need to run a MonteCarlo simulation.
+We decided to run a MonteCarlo simulation with a `150` iterations and a `0.1` standard deviation.
+The reason we chose a `150` iterations is because we wanted to have a large enough sample size to get a good idea of the variance in the data.
+This was also the same values that Ciufolini and Paolozzi used in their paper.
+As you can see in Figures G and H, the MonteCarlo simulation shows us that the variance in the data is not as large as it was for China and Italy.
+We believe this is due to the fact that since Australia required more days to reach their peak, the variance in the data is smaller since `n` is much larger.
+The day of flex for cases in Australia appears to reside around `r round(mean(day_of_flex_ca), 2)` days with a standard deviation of `r round(sd(day_of_flex_ca), 2)` days.
+The day of flex for fatalities in Australia appears to reside around `r round(mean(day_of_flex_fa), 2)` days with a standard deviation of `r round(sd(day_of_flex_fa), 2)` days.
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+australiaMCPlot_cases <- ggplot() +
+    geom_point(aes(x=1:m, y=day_of_flex_ca), color="#d33636") +
+    theme(title =element_text(size=6)) + 
+    geom_hline(yintercept=mean(day_of_flex_ca), color="#d33636", linetype="dashed", size=2) + 
+    labs(title = "Figure G: MonteCarlo Simulation for Day of Flex (Cases)", x = "Trial", y = "Day of Flex")
+australiaMCPlot_fatalities <- ggplot() +
+    geom_point(aes(x=1:m, y=day_of_flex_fa), color="#1b95ff") +
+    theme(title =element_text(size=6)) +
+    geom_hline(yintercept=mean(day_of_flex_fa), color="#1b95ff", linetype="dashed", size=2) + 
+    labs(title = "Figure G: MonteCarlo Simulation for Day of Flex (Fatalities)", x = "Trial", y = "Day of Flex")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(australiaMCPlot_cases)
+print(australiaMCPlot_fatalities)
+```
+
+## Applying the day of flex indicator to the data
+
+As you can see in Figures I and J, the day of flex indicator for cases and fatalities appears to sit right on the midpoint of the projected gauss-curve.
+This is because the day of flex indicator is the point at which the derivative of the gauss-curve is equal to `0`.
+This is when the daily cases and fatalities are at their peak and begin to decline.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_plot_Australia_future + 
+  geom_vline(xintercept = mean(day_of_flex_ca), color="#d33636", size=1.5, linetype="dashed") + 
+  labs(title="Figure I: Day of flex indicator for cases (60 days after)") + 
+  theme(title =element_text(size=6)))
+print(fatalities_plot_Australia_future + 
+  geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed") + 
+  labs(title="Figure J: Day of flex indicator for fatalities (81 days after)") + 
+  theme(title =element_text(size=6)))
+```
+
+## Confirming Results with entire dataset
+
+In order to confirm our results, we decided to overlay our findings with the entire dataset to see how well our model fits the actual data.
+As you can see in Figures K and L, our model did a decent job of fitting the actual data.
+It appears the model works the best for fatalities but the cases model starts to be a little innacurate once the data starts to plateau.
+Our theory for this inconsistency between fatalities and cases is that it is far easier to report fatalities than it is to report cases.
+It is not often that a person will die from the virus and not be tested or reported.
+However, it is very common for a person to have the virus and not be reported.
+This variance in the data once it begins to plateau could be due to the fact that testing procedures could have changed or the reporting procedures could have changed.
+Since the curve starts to overestimate and then starts to underestimate, Australia could have had a few weeks where they were not doing as much testing, and then they started doing more testing.
+This could explain the variance in the tail of the data.
+Regardless of this variance, our model did a good job at predicting and fitting the day of flex.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+cases_plot_Australia_confirm <- ggplot(australia, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    theme(title =element_text(size=6)) + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    geom_vline(xintercept = mean(day_of_flex_ca), color="#d33636", size=1.5, linetype="dashed") +
+    labs(title = "Figure K: Entire Cases in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Cases")
+fatalities_plot_Australia_confirm <- ggplot(australia, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    theme(title =element_text(size=6)) +
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed") + 
+    labs(title = "Figure L: Entire Fatalities in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_plot_Australia_confirm)
+print(fatalities_plot_Australia_confirm)
+```
+
+# United States Anomaly
+
+An interesting anomaly that we found in the data was that the United States had a hard time fitting the gauss-error funciton.
+As you can see in Figures M and N, the United States data does not ever begin to plateau. 
+The data is always at an increasing rate.
+This makes it hard to predict when the day of flex will be.
+We believe that this is due to the fact that the United States had very lax restrictions when compared to other countries.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+# US data
+us <- data %>% filter(location == "United States")
+us <- subset(us, select = c(date, total_cases, total_deaths))
+us <- us %>% mutate(days = 1:n())
+us <- us %>% mutate(year = substr(date, 1, 4))
+us_data_cases <- ggplot(data=us, aes(x=days, y=total_cases, color=year)) + 
+  geom_point() + 
+  labs(title="Figure M: Total Cases in the United States from 1/22/2020 to 11/14/2022 (1,028 days)", color="Year", x="Days", y="Total Cases")
+us_data_deaths <- ggplot(data=us, aes(x=days, y=total_deaths, color=year)) + 
+  geom_point() + 
+  labs(title="Figure N: Total Deaths in the United States from 1/22/2020 to 11/14/2022 (1,028 days)", color="Year", x="Days", y="Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(us_data_cases)
+print(us_data_deaths)
+```
+
+
+
+
+
+
+
+# Simulation Analysis Summary
+
+In our simulation analysis, we found that the day of flex indicator was a good predictor of when the day of flex would be for most countries.
+This model may not be the best model for countries who have different restrictions or have different testing procedures.
+
+
+# Potential Improvements
+
+One idea that comes to mind in terms of improvements for this model is to see if we can account for the changes in testing procedures. 
+This could be done by looking at the data and seeing when the testing procedures changed and then adjusting the model to account for this change.
+Although this would require advanced knowledge of the data as well as policy changes, but it could be a good way to improve the model.
+Another idea is to see if we could find other models that fit countries with laxer restrictions better.
+If they don't follow a gauss-error function, then we could try to explore other models that fit their data better.
+
+# Works Cited
+
+- Link to the study:
+  - I. Ciufolini, A. Paolozzi, Prediction of the time evolution of the Covid-19 Pandemic in Italy by a Gauss
+Error Function and Monte Carlo simulations. Submitted to BioRxiv on 03.26.2020 and transferred on
+03.27.2020 to MedRxiv. https://doi.org/10.1101/2020.03.27.20045104
+- Link to the covid data used:
+  - https://covid19.who.int/
+- Source to find the second derivative of fitted function:
+  - https://proofwiki.org/wiki/Derivative_of_Error_Function
