@@ -1,7 +1,7 @@
 ---
-title: "Predicting Covid Data"
+title: "Predicting Covid-19 Data"
 author: "Austin Lackey, Chien Lin and Jin Peng"
-date: "Tuesday, November 6th, 2022"
+date: "Tuesday, December 6th, 2022"
 output:
   powerpoint_presentation: default
   beamer_presentation: default
@@ -10,8 +10,6 @@ output:
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 # useful libraries
 library(tidyverse)
-library(dplyr)
-library(ggplot2)
 library(pracma)
 library(minpack.lm)
 # read covid data
@@ -32,7 +30,11 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8)
 
 ## Introduction : Ciufolini and Paolozzi's Study
 
+<<<<<<< HEAD:main.rmd
 * The time evolution of he number of cumulative diagnosed positive cases and fatalities in China approximates the distribution of a gauss error function: $a+b*erf(c*x-d)$.
+=======
+* The time evolution of the number of cumulative diagnosed positive cases and fatalities in China approximates the distribution of a gauss error function: $a+b*erf(c*x-d)$.
+>>>>>>> 2e69c047efb7ce1d24ecbdcc1f4d57bc84936273:powerpoint.rmd
 * Performed the function on Italy data to approximate the number of cases.
 * Performed 150 Monte Carlo simulations to predict the day in which the peak of the number of daily cases in Italy occurs.
 
@@ -66,7 +68,7 @@ ggplot(data = china) +
 
 ## Fit by the Gauss Error Function
 
-Apply $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$ of a Gauss error function model: $a+b*erf(c*x-d)$.
+Apply an $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$ of a Gauss error function model: $a+b*erf(c*x-d)$.
 
 ```{r, include=FALSE, message=FALSE, warning=FALSE}
 gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
@@ -204,10 +206,10 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
 
 ## Overview of the Monte Carlo Simulation
 
-* create a random matrix : m X n
+* Create a random matrix : m X n
   * m = number of random outcomes (*chosen to be 150*)
   * n = number of observed days (*n = 1,...,j*)
-* each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
+* Each # in the matrix is a Gaussian distribution with mean = 1 and sigma = 0.1
   * multiply each column (*j*) by the # of total cases (or deaths) that corresponds to each day *j*
 - add more...
 
@@ -218,7 +220,7 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
 
 ## 150 Monte Carlo simulations plotted
 
-"Each red dot corresponds to the day of occurrence of the flex obtained with each of the 150 Monte Carlo simulations"
+Each red dot corresponds to the day of occurrence of the flex obtained with each of the 150 Monte Carlo simulations
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 n <- 44
@@ -323,7 +325,7 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
 
 # Australia Simulation
 
-## Initial Data for Cases in Australia
+## Initial Data for Australia (Cases)
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 australia <- data %>% filter(location == "Australia", date > "2020-06-01", date < "2020-12-19")
@@ -343,13 +345,13 @@ fatalities_Australia <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
 print(cases_Australia)
 ```
 
-## Initial Data for Fatalities in Australia
+## Initial Data for Australia (Fatalities)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 print(fatalities_Australia)
 ```
 
-## Fitting Gauss Error Function to Cases in Australia
+## Fitting a Gauss Error Function to Australia Data (Cases)
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 x <- 0:minimizedDays
@@ -380,13 +382,11 @@ fatalities_pre_plot_Australia <- ggplot(australiaPre, aes(x = days, y = total_de
 print(cases_pre_plot_Australia)
 ```
 
-## Fitting Gauss Error Function to Fatalities in Australia
+## Fitting a Gauss Error Function to Australia Data (Fatalities)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 print(fatalities_pre_plot_Australia)
 ```
-
-## Applying the function to the whole cases dataset
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 x <- 0:200
@@ -406,17 +406,34 @@ fatalities_plot_Australia <- ggplot(australia, aes(x = days, y = total_deaths)) 
     labs(title = "Total Deaths in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-print(cases_plot_Australia)
+## Applying the function to the future dataset (Cases)
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+cases_plot_Australia_future <- ggplot(australiaPre, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    xlim(0, 200) +
+    labs(title = "Extrapolating Future Case Data with Gauss Error Function", x = "Days", y = "Total Cases")
+fatalities_plot_Australia_future <- ggplot(australiaPre, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    xlim(0, 200) +
+    labs(title = "Extrapolating Future Fatality Data with Gauss Error Function", x = "Days", y = "Total Deaths")
 ```
 
-## Applying the function to the whole fatalities dataset
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-print(fatalities_plot_Australia)
+print(cases_plot_Australia_future)
 ```
 
-## Using MonteCarlo Simulation to predict the day of flex
+## Applying the function to the future dataset (Fatalities)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(fatalities_plot_Australia_future)
+```
+
+# MonteCarlo Simulation for Australia's Day of Flex
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 #Montecarlo Simulation
@@ -467,6 +484,31 @@ for (i in 1:m) {
 }
 ```
 
+## MonteCarlo Simulation Data (Cases) (150 trials)
+
+```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+australiaMCPlot_cases <- ggplot() +
+    geom_point(aes(x=1:m, y=day_of_flex_ca), color="#d33636") +
+    geom_hline(yintercept=mean(day_of_flex_ca), color="#d33636", linetype="dashed", size=2) + 
+    labs(title = "MonteCarlo Simulation for Day of Flex (Cases)", x = "Trial", y = "Day of Flex")
+australiaMCPlot_fatalities <- ggplot() +
+    geom_point(aes(x=1:m, y=day_of_flex_fa), color="#1b95ff") +
+    geom_hline(yintercept=mean(day_of_flex_fa), color="#1b95ff", linetype="dashed", size=2) + 
+    labs(title = "MonteCarlo Simulation for Day of Flex (Fatalities)", x = "Trial", y = "Day of Flex")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(australiaMCPlot_cases)
+```
+
+## MonteCarlo Simulation Data (Fatalities) (150 trials)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(australiaMCPlot_fatalities)
+```
+
+## Using MonteCarlo Simulation to Predict the Day of Flex
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
 print(mean(day_of_flex_fa))
 print(sd(day_of_flex_fa))
@@ -480,21 +522,89 @@ print(sd(day_of_flex_ca))
 ## Applying the day of flex indicator to the data (Cases)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-print(cases_plot_Australia + geom_vline(xintercept = mean(day_of_flex_ca), color="#d33636", size=1.5, linetype="dashed"))
+print(cases_plot_Australia_future + geom_vline(xintercept = mean(day_of_flex_ca), color="#d33636", size=1.5, linetype="dashed") + labs(title="Day of flex indicator for cases (60 days after)"))
 ```
 
 ## Applying the day of flex indicator to the data (Fatalities)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-print(fatalities_plot_Australia + geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed"))
+print(fatalities_plot_Australia_future + geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed") + labs(title="Day of flex indicator for fatalities (81 days after)"))
 ```
 
+# Confirming Results with entire dataset
+
+## Entire data (Cases)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+cases_plot_Australia_confirm <- ggplot(australia, aes(x = days, y = total_cases)) + 
+    geom_point() + 
+    stat_function(fun=cases_function_australia, color="#d33636", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    geom_vline(xintercept = mean(day_of_flex_ca), color="#d33636", size=1.5, linetype="dashed") +
+    labs(title = "Entire Cases in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Cases")
+fatalities_plot_Australia_confirm <- ggplot(australia, aes(x = days, y = total_deaths)) +
+    geom_point() + 
+    stat_function(fun=fatalities_function_australia, color="#1b95ff", size=1.5) +
+    scale_x_continuous(breaks = seq(0, 200, 10)) +
+    geom_vline(xintercept = mean(day_of_flex_fa), color="#1b95ff", size=1.5, linetype="dashed") + 
+    labs(title = "Entire Fatalities in Australia from 6/2/2020 to 12/18/2020 (200 days)", x = "Days", y = "Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(cases_plot_Australia_confirm)
+```
+
+## Entire data (Fatalities)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(fatalities_plot_Australia_confirm)
+```
+
+# Interesting Anomaly with United States Data
+
+## All United States Data (Cases)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, results=FALSE}
+# US data
+us <- data %>% filter(location == "United States")
+us <- subset(us, select = c(date, total_cases, total_deaths))
+us <- us %>% mutate(days = 1:n())
+us <- us %>% mutate(year = substr(date, 1, 4))
+us_data_cases <- ggplot(data=us, aes(x=days, y=total_cases, color=year)) + 
+  geom_point() + 
+  labs(title="Total Cases in the United States from 1/22/2020 to 11/14/2022 (1,028 days)", color="Year", x="Days", y="Total Cases")
+us_data_deaths <- ggplot(data=us, aes(x=days, y=total_deaths, color=year)) + 
+  geom_point() + 
+  labs(title="Total Deaths in the United States from 1/22/2020 to 11/14/2022 (1,028 days)", color="Year", x="Days", y="Total Deaths")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(us_data_cases)
+```
+
+## All United States Data (Fatalities)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+print(us_data_deaths)
+```
+
+## Conclusion
+
+- The day of flex indicator is a good indicator to predict the time of the peak of the pandemic (for most countries).
+- The gauss error function is a good for countries like...
+  - China, Italy and Australia
+- The gauss error function is not a good fit for countries like...
+  - United States
+  - Any other countries who may have different covid restrictions
+- MonteCarlo simulations are neccesary due to the uncertainty of the data.
+
+
 ## Works Cited
-- Link to study:
-- I. Ciufolini, A. Paolozzi, Prediction of the time evolution of the Covid-19 Pandemic in Italy by a Gauss
+- Link to the study:
+  - I. Ciufolini, A. Paolozzi, Prediction of the time evolution of the Covid-19 Pandemic in Italy by a Gauss
 Error Function and Monte Carlo simulations. Submitted to BioRxiv on 03.26.2020 and transferred on
 03.27.2020 to MedRxiv. https://doi.org/10.1101/2020.03.27.20045104
-- Link to covid data:
-- https://covid19.who.int/
-- source to find the second derivative of fitted function:
-- https://proofwiki.org/wiki/Derivative_of_Error_Function
+- Link to the covid data used:
+  - https://covid19.who.int/
+- Source to find the second derivative of fitted function:
+  - https://proofwiki.org/wiki/Derivative_of_Error_Function
