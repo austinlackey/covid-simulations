@@ -2,14 +2,18 @@
 title: "MonteCarlo Simulation's of the Covid-19 Pandemic"
 author: "Austin Lackey, Chien Lin and Jin Peng"
 date: "Tuesday, December 6th, 2022"
-output: 
+output:
   pdf_document:
-    toc: TRUE
+    toc: yes
     toc_depth: 2
-    number_sections: TRUE
+    number_sections: yes
     df_print: paged
-    fig_caption: TRUE
+    fig_caption: yes
     highlight: tango
+  html_document:
+    toc: yes
+    toc_depth: '2'
+    df_print: paged
 ---
 ```{r setup, include=FALSE}
 # useful libraries
@@ -26,7 +30,7 @@ knitr::opts_chunk$set(fig.width=3, fig.height=3)
 
 ## Background
 
-In our MonteCarlo simulation analysis, we fit a gauss-error function over cumulaative Covid-19 data.
+In our MonteCarlo simulation analysis, we fit a gauss-error function over cumulative Covid-19 data.
 In the study mentioned below, the authors stated that it is widely accepted that China's Covid-19 data follows a gauss-error function. 
 We decided to test this hypothesis by fitting a gauss-error function over the data of China, Italy, and the United States using data from the World Health Organization (WHO).
 
@@ -46,15 +50,19 @@ In their study, it was widely accepted that China's Covid-19 data follows a gaus
 
 $$Gauss-Error Function =a+b*erf(c*x-d)$$
 
-The authors perfomed a MonteCarlo simulation with 150 replications to approximate the day of flex point for China and Italy.
+The authors performed a MonteCarlo simulation with 150 replications to approximate the day of flex point for China and Italy.
 The use of the MonteCarlo simulation was crucial to their study's success as reported cases and fatalities can differ up `to 10%` from the actual number of cases and fatalities.
 
 
 
 
-# Jin: China
+# China
 
-## Available Official Data (Positive Cases)
+## Preview of the Data
+
+In Ciufolini and Paolozzi's MonteCarlo Study, the authors stated that it is widely accepted that China's Covid-19 data follows a gauss-error function. 
+To confirm that, we first used the China data from January 22, 2020 (included), to March 27, 2020 (included) to take a look. 
+The figures below are the cumulative number of diagnosed positive cases of COVID-19 in China and the cumulative number of fatalities due to COVID-19 in China.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 # extract China data of interest
@@ -70,11 +78,7 @@ positive <- ggplot(data = china) +
   theme(title =element_text(size=6)) +
   labs(x = "Date", y = "China cumulative number of cases")
 positive
-```
 
-## Available Official Data (Fatalities)
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 ggplot(data = china) +
   geom_point(aes(x = date, y = total_deaths)) +
   theme(title =element_text(size=6)) +
@@ -82,9 +86,14 @@ ggplot(data = china) +
   ylim(0,5000)
 ```
 
-## Fit by the Gauss Error Function
+## Gauss Error Function
 
-Apply an $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$ of a Gauss error function model: $a+b*erf(c*x-d)$.
+In the study, to fit the data, the authors stated that they used a function of the type of the Gauss error function, that is, the integral of a normal, Gaussian distribution: 
+$$a+b*erf(c*x-d)$$ 
+
+There are four parameters $a,b,c,d$ in this model, which shows great level of fit. Since they didn't specify how to realize the function in R, we went around and found that the $nls$ function did a great job on what we need. 
+We took a cheap gauss of $a,b,c,d$ from the preview of the data as the start points, and apply the $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$. 
+Here is an example code of the model construction by the $nls$ function:
 
 ```{r, include=FALSE, message=FALSE, warning=FALSE}
 gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
@@ -96,7 +105,12 @@ model <- nls(total_cases ~ gauss_fn(days,a,b,c,d),
              start=list(a=10000,b=10000,c=0.1,d=1))
 ```
 
-## Fit by the Gauss Error Function and Peak Day (Positive Cases)
+## Fitting a Gauss Error Function to China's Data
+
+In this section, we reported the results of the fit of China's data. 
+The figures below are the fit of the cumulative number of diagnosed positive cases of COVID-19 in China and the fit of the cumulative number of fatalities due to COVID-19 in China. 
+The red solid lines are the fitting functions of the type of a Guass error function with four parameters. 
+The horizontal axis shows the day numbers from January 22, 2020 (included), to March 27, 2020 (included). The vertical axis shows the cumulative numbers.
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 try <- china$total_cases
@@ -125,13 +139,8 @@ ggplot(data = china) +
   geom_point(aes(x = days, y = total_cases)) +
   theme(title =element_text(size=6)) +
   labs(x = "Days", y = "China cumulative number of cases") +
-  stat_function(fun=fn_model1, color="#d33636", size=1.5) +
-  geom_vline(xintercept = peak1, color="#d33636", size=1.5, linetype="dashed")
-```
+  stat_function(fun=fn_model1, color="#d33636", size=1.5)
 
-## Fit by the Gauss Error Function and Peak Day (Fatalities)
-
-```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 try <- china$total_deaths
 model_try <- nls(try ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=2200,b=2200,c=0.1,d=1))
 est_try <- summary(model_try)$parameters
@@ -147,9 +156,38 @@ fn_try_deriv <- D(fn_try_deriv,'x')
 x=seq(1,67,length.out=6700)
 tmp <- eval(fn_try_deriv)
 peak2 <- min(x[tmp < 0])
+
+model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+#summary(model2)$parameters
+fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
+ggplot(data = china) +
+  geom_point(aes(x = days, y = total_deaths)) +
+  theme(title =element_text(size=6)) +
+  labs(x = "Days", y = "China cumulative number of fatalities") +
+  ylim(0,5000) +
+  stat_function(fun=fn_model2, color="#1b95ff", size=1.5)
 ```
 
+We can tell that both fitting function fit the cumulative number dots pretty well, which verified the study's saying that China's Covid-19 data follows a gauss-error function. 
+
+
+## China's Day of Flex
+
+The day of flex is the peak day of daily cases, that is, the day that the second derivative of the fit of cumulative number changes sign, from acceleration to deceleration. 
+To analyze the day of flex of positive cases and fatalities in China, we took the second derivative of the Gauss error function we fitted above, and used the first day with negative second derivative as the day of flex. 
+The red dashed vertical line shows the day of flex.
+
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
+model1 <- nls(total_cases ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
+# summary(model1)$parameters
+fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)}
+ggplot(data = china) +
+  geom_point(aes(x = days, y = total_cases)) +
+  theme(title =element_text(size=6)) +
+  labs(x = "Days", y = "China cumulative number of cases") +
+  stat_function(fun=fn_model1, color="#d33636", size=1.5)
+
 model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
 #summary(model2)$parameters
 fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)}
@@ -161,6 +199,9 @@ ggplot(data = china) +
   stat_function(fun=fn_model2, color="#1b95ff", size=1.5) +
   geom_vline(xintercept = peak2, color="#1b95ff", size=1.5, linetype="dashed")
 ```
+
+The day of flex of cumulative number of diagnosed positive cases in China is 18.66 and the day of flex of cumulative number of fatalities in China is 24.74. 
+We can tell that they are both around the middle of the climbing portion of the data, where the cumulative number starts to decelerate in growing.
 
 
 
