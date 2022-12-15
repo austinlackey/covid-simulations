@@ -64,6 +64,7 @@ In Ciufolini and Paolozzi's MonteCarlo Study, the authors stated that it is wide
 To confirm that, we first used the China data from January 22, 2020 (included), to March 27, 2020 (included) to take a look. 
 The figures below are the cumulative number of diagnosed positive cases of COVID-19 in China and the cumulative number of fatalities due to COVID-19 in China.
 
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 # extract China data of interest
 china <- data |>
@@ -89,11 +90,13 @@ ggplot(data = china) +
 ## Gauss Error Function
 
 In the study, to fit the data, the authors stated that they used a function of the type of the Gauss error function, that is, the integral of a normal, Gaussian distribution: 
+
 $$a+b*erf(c*x-d)$$ 
 
 There are four parameters $a,b,c,d$ in this model, which shows great level of fit. Since they didn't specify how to realize the function in R, we went around and found that the $nls$ function did a great job on what we need. 
 We took a cheap gauss of $a,b,c,d$ from the preview of the data as the start points, and apply the $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$. 
 Here is an example code of the model construction by the $nls$ function:
+
 
 ```{r, include=FALSE, message=FALSE, warning=FALSE}
 gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
@@ -111,6 +114,7 @@ In this section, we reported the results of the fit of China's data.
 The figures below are the fit of the cumulative number of diagnosed positive cases of COVID-19 in China and the fit of the cumulative number of fatalities due to COVID-19 in China. 
 The red solid lines are the fitting functions of the type of a Guass error function with four parameters. 
 The horizontal axis shows the day numbers from January 22, 2020 (included), to March 27, 2020 (included). The vertical axis shows the cumulative numbers.
+
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 try <- china$total_cases
@@ -202,7 +206,6 @@ ggplot(data = china) +
 
 The day of flex of cumulative number of diagnosed positive cases in China is 18.66 and the day of flex of cumulative number of fatalities in China is 24.74. 
 We can tell that they are both around the middle of the climbing portion of the data, where the cumulative number starts to decelerate in growing.
-
 
 
 # Italy
