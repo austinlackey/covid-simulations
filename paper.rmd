@@ -26,7 +26,7 @@ knitr::opts_chunk$set(fig.width=3, fig.height=3)
 
 ## Background
 
-In our MonteCarlo simulation analysis, we fit a gauss-error function over cumulaative Covid-19 data.
+In our MonteCarlo simulation analysis, we fit a gauss-error function over cumulative Covid-19 data.
 In the study mentioned below, the authors stated that it is widely accepted that China's Covid-19 data follows a gauss-error function. 
 We decided to test this hypothesis by fitting a gauss-error function over the data of China, Italy, and the United States using data from the World Health Organization (WHO).
 
@@ -46,15 +46,17 @@ In their study, it was widely accepted that China's Covid-19 data follows a gaus
 
 $$Gauss-Error Function =a+b*erf(c*x-d)$$
 
-The authors perfomed a MonteCarlo simulation with 150 replications to approximate the day of flex point for China and Italy.
+The authors performed a MonteCarlo simulation with 150 replications to approximate the day of flex point for China and Italy.
 The use of the MonteCarlo simulation was crucial to their study's success as reported cases and fatalities can differ up `to 10%` from the actual number of cases and fatalities.
 
 
 
 
-# Jin: China
+# China
 
-## Available Official Data (Positive Cases)
+## Preview of the Data
+
+In Ciufolini and Paolozzi's MonteCarlo Study, the authors stated that it is widely accepted that China's Covid-19 data follows a gauss-error function. To confirm that, we first used the China data from January 22, 2020 (included), to March 27, 2020 (included) to take a look. The figures below are the cumulative number of diagnosed positive cases of COVID-19 in China and the cumulative number of fatalities due to COVID-19 in China.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 # extract China data of interest
@@ -72,8 +74,6 @@ positive <- ggplot(data = china) +
 positive
 ```
 
-## Available Official Data (Fatalities)
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 ggplot(data = china) +
   geom_point(aes(x = date, y = total_deaths)) +
@@ -82,9 +82,11 @@ ggplot(data = china) +
   ylim(0,5000)
 ```
 
-## Fit by the Gauss Error Function
+## Gauss Error Function
 
-Apply an $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$ of a Gauss error function model: $a+b*erf(c*x-d)$.
+In the study, to fit the data, the authors stated that they used a function of the type of the Gauss error function, that is, the integral of a normal, Gaussian distribution: 
+$$a+b*erf(c*x-d)$$ 
+There are four parameters $a,b,c,d$ in this model, which shows great level of fit. Since they didn't specify how to realize the function in R, we went around and found that the $nls$ function did a great job on what we need. We took a cheap gauss of $a,b,c,d$ from the preview of the data as the start points, and apply the $nls$ function to determine the nonlinear (weighted) least-squares estimates of the four parameters $a,b,c,d$. Here is an example code of the model construction by the $nls$ function:
 
 ```{r, include=FALSE, message=FALSE, warning=FALSE}
 gauss_fn <- function(x,a,b,c,d) {a+b*erf(c*x-d)}
@@ -96,7 +98,9 @@ model <- nls(total_cases ~ gauss_fn(days,a,b,c,d),
              start=list(a=10000,b=10000,c=0.1,d=1))
 ```
 
-## Fit by the Gauss Error Function and Peak Day (Positive Cases)
+## Fitting a Gauss Error Function to China's Data
+
+In this section, we reported the results of the fit of China's data. The figures below are the fit of the cumulative number of diagnosed positive cases of COVID-19 in China and the fit of the cumulative number of fatalities due to COVID-19 in China. The red solid lines are the fitting functions of the type of a Guass error function with four parameters. The horizontal axis shows the day numbers from January 22, 2020 (included), to March 27, 2020 (included). The vertical axis shows the cumulative numbers.
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 try <- china$total_cases
@@ -129,7 +133,6 @@ ggplot(data = china) +
   geom_vline(xintercept = peak1, color="#d33636", size=1.5, linetype="dashed")
 ```
 
-## Fit by the Gauss Error Function and Peak Day (Fatalities)
 
 ```{r, results=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
 try <- china$total_deaths
@@ -161,6 +164,11 @@ ggplot(data = china) +
   stat_function(fun=fn_model2, color="#1b95ff", size=1.5) +
   geom_vline(xintercept = peak2, color="#1b95ff", size=1.5, linetype="dashed")
 ```
+
+We can tell that both fitting function fit the cumulative number dots pretty well, which verified the study's saying that China's Covid-19 data follows a gauss-error function. 
+
+## China's Day of Flex
+
 
 
 
