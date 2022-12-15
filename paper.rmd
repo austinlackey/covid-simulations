@@ -77,13 +77,15 @@ china <- data |>
 positive <- ggplot(data = china) +
   geom_point(aes(x = date, y = total_cases)) +
   theme(title =element_text(size=6)) +
-  labs(x = "Date", y = "China cumulative number of cases")
+  labs(title = "Figure 1: Total Cases in China from 1/22/2020 to 3/27/2020",
+       x = "Date", y = "China cumulative number of cases")
 positive
 
 ggplot(data = china) +
   geom_point(aes(x = date, y = total_deaths)) +
   theme(title =element_text(size=6)) +
-  labs(x = "Date", y = "China cumulative number of fatalities") +
+  labs(title = "Figure 2: Total Deaths in China from 1/22/2020 to 3/27/2020",
+       x = "Date", y = "China cumulative number of fatalities") +
   ylim(0,5000)
 ```
 
@@ -142,7 +144,8 @@ fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_cases)) +
   theme(title =element_text(size=6)) +
-  labs(x = "Days", y = "China cumulative number of cases") +
+  labs(title = "Figure 3: Total Cases in China with Gauss Error Function",
+       x = "Days", y = "China cumulative number of cases") +
   stat_function(fun=fn_model1, color="#d33636", size=1.5)
 
 try <- china$total_deaths
@@ -167,7 +170,8 @@ fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_deaths)) +
   theme(title =element_text(size=6)) +
-  labs(x = "Days", y = "China cumulative number of fatalities") +
+  labs(title = "Figure 4: Total Deaths in China with Gauss Error Function",
+       x = "Days", y = "China cumulative number of fatalities") +
   ylim(0,5000) +
   stat_function(fun=fn_model2, color="#1b95ff", size=1.5)
 ```
@@ -189,7 +193,8 @@ fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_cases)) +
   theme(title =element_text(size=6)) +
-  labs(x = "Days", y = "China cumulative number of cases") +
+  labs(title = "Figure 5: Total Cases in China with Day of Flex",
+       x = "Days", y = "China cumulative number of cases") +
   stat_function(fun=fn_model1, color="#d33636", size=1.5)
 
 model2 <- nls(total_deaths ~ gauss_fn(days,a,b,c,d), data=china, start=list(a=10000,b=10000,c=0.1,d=1))
@@ -198,7 +203,8 @@ fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_deaths)) +
   theme(title =element_text(size=6)) +
-  labs(x = "Days", y = "China cumulative number of fatalities") +
+  labs(title = "Figure 6: Total Deaths in China with Day of Flex",
+       x = "Days", y = "China cumulative number of fatalities") +
   ylim(0,5000) +
   stat_function(fun=fn_model2, color="#1b95ff", size=1.5) +
   geom_vline(xintercept = peak2, color="#1b95ff", size=1.5, linetype="dashed")
