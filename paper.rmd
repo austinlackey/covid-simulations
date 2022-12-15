@@ -77,14 +77,14 @@ china <- data |>
 positive <- ggplot(data = china) +
   geom_point(aes(x = date, y = total_cases)) +
   theme(title =element_text(size=6)) +
-  labs(title = "Figure 1: Total Cases in China from 1/22/2020 to 3/27/2020",
+  labs(title = "Figure 1: Total Cases in China from 1/22/2020 \nto 3/27/2020",
        x = "Date", y = "China cumulative number of cases")
 positive
 
 ggplot(data = china) +
   geom_point(aes(x = date, y = total_deaths)) +
   theme(title =element_text(size=6)) +
-  labs(title = "Figure 2: Total Deaths in China from 1/22/2020 to 3/27/2020",
+  labs(title = "Figure 2: Total Deaths in China from 1/22/2020 \nto 3/27/2020",
        x = "Date", y = "China cumulative number of fatalities") +
   ylim(0,5000)
 ```
@@ -144,7 +144,7 @@ fn_model1 <- function(x) {4.017e+04 + 4.047e+04 * erf(9.284e-02 * x - 1.732e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_cases)) +
   theme(title =element_text(size=6)) +
-  labs(title = "Figure 3: Total Cases in China with Gauss Error Function",
+  labs(title = "Figure 3: Total Cases in China with \nGauss Error Function",
        x = "Days", y = "China cumulative number of cases") +
   stat_function(fun=fn_model1, color="#d33636", size=1.5)
 
@@ -170,7 +170,7 @@ fn_model2 <- function(x) {1.571e+03 + 1.658e+03 * erf(6.194e-02 * x - 1.533e+00)
 ggplot(data = china) +
   geom_point(aes(x = days, y = total_deaths)) +
   theme(title =element_text(size=6)) +
-  labs(title = "Figure 4: Total Deaths in China with Gauss Error Function",
+  labs(title = "Figure 4: Total Deaths in China with \nGauss Error Function",
        x = "Days", y = "China cumulative number of fatalities") +
   ylim(0,5000) +
   stat_function(fun=fn_model2, color="#1b95ff", size=1.5)
@@ -240,12 +240,12 @@ italy <- italy %>% mutate(days = c(1:67))
 ggplot(italy, aes(x = days, y = total_cases)) + 
     geom_point() + 
     theme(title =element_text(size=6)) +
-    labs(title = "Figure I: Total Cases in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Cases")
+    labs(title = "Figure I: Total Cases in Italy from 2/15/2020 \nto 3/29/2020", x = "Days", y = "Total Cases")
 #plot
 ggplot(italy, aes(x = days, y = total_deaths)) +
     geom_point() + 
     theme(title =element_text(size=6)) +
-    labs(title = "Figure II: Total Deaths in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Deaths")
+    labs(title = "Figure II: Total Deaths in Italy from 2/15/2020 \nto 3/29/2020", x = "Days", y = "Total Deaths")
 ```
 
 As you can see, the data points already follows a pattern that looks like the cumulative distribution of a Gauss Error function.
@@ -271,14 +271,14 @@ ggplot(italy, aes(x = days, y = total_cases)) +
     stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     theme(title =element_text(size=6)) +
-    labs(title = "Figure III: Total Cases in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Cases")
+    labs(title = "Figure III: Total Cases in Italy from 2/15/2020 \nto 3/29/2020", x = "Days", y = "Total Cases")
 #plot
 ggplot(italy, aes(x = days, y = total_deaths)) +
     geom_point() + 
     stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     theme(title =element_text(size=6)) +
-    labs(title = "Figure IV: Total Deaths in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Deaths")
+    labs(title = "Figure IV: Total Deaths in Italy from 2/15/2020 \nto 3/29/2020", x = "Days", y = "Total Deaths")
 ```
 
 ## Monte Carlo Simulation
@@ -358,7 +358,7 @@ ggplot(italy, aes(x = days, y = total_cases)) +
     stat_function(fun=cf_italy, color="#d33636", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     theme(title =element_text(size=6)) +
-    labs(title = "Figure VI: Total Cases in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Cases") + 
+    labs(title = "Figure VI: Total Cases in Italy from 2/15/2020 \nto 3/29/2020", x = "Days", y = "Total Cases") + 
   geom_vline(xintercept = mean(flex_ca), color="#d33636", size=1, linetype="dashed")
 ```
 
@@ -404,7 +404,7 @@ ggplot(italy, aes(x = days, y = total_deaths)) +
     stat_function(fun=df_italy, color="#1b95ff", size=1.5, linetype="solid") +
     scale_x_continuous(breaks = seq(0, 67, 10)) +
     theme(title =element_text(size=6)) +
-    labs(title = "Figure VIII: Total Deaths in Italy from 2/15/2020 to 3/29/2020", x = "Days", y = "Total Deaths") +
+    labs(title = "Figure VIII: Total Deaths in Italy from 2/15/2020 \nto 3/29/2020", x = "Days", y = "Total Deaths") +
   geom_vline(xintercept = mean(flex_fa), color="#1b95ff", size=1, linetype="dashed")
 ```
 
